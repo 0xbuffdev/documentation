@@ -18,9 +18,9 @@ export const SITE = {
 	description:
 		"Tools for engineers who work with AI agents, and 0xNAND, a mastery platform that teaches software engineering from the ground up.",
 	companyUrl: "https://0xbuff.com",
-	docsUrl: "https://learn.0xbuff.com",
+	docsUrl: "https://docs.0xbuff.com",
 	cloudUrl: "https://cloud.memofs.dev",
-	githubUrl: "https://github.com/0xbuffdev/learn",
+	githubUrl: "https://github.com/0xbuffdev/documentation",
 	xUrl: "https://x.com/0xbuffdev",
 	xHandle: "@0xbuffdev",
 	/** General inbox, shown in the footer's meta band. */

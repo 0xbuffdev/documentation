@@ -1,0 +1,11 @@
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+writable_roots = [
+  "../platform",
+  "../content",
+  "../context",
+  "../internal-context",
+  "../skills",
+  "../memofs",
+]

@@ -1,6 +1,6 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
-import { PRIMARY_NAVIGATION, ROUTES, SITE } from "./site";
 import { BrandWordmark } from "~/components/brand-wordmark";
+import { PRIMARY_NAVIGATION, ROUTES, SITE } from "./site";
 
 export function baseOptions(): BaseLayoutProps {
 	return {
@@ -9,7 +9,7 @@ export function baseOptions(): BaseLayoutProps {
 			transparentMode: "top",
 			title: (
 				<span className="font-display font-bold tracking-tight">
-					tools / <BrandWordmark />
+					<BrandWordmark />
 				</span>
 			),
 		},

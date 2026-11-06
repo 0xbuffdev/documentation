@@ -1,7 +1,6 @@
 import { glob } from "node:fs/promises";
 import type { Config } from "@react-router/dev/config";
 import { createGetUrl, getSlugs } from "fumadocs-core/source";
-import { productsWithDetails } from "./src/lib/products";
 import { CONTENT_DIRS, ROUTES, STATIC_PRERENDER_PATHS } from "./src/lib/site";
 
 	const getUrl = createGetUrl(ROUTES.docs);
@@ -18,10 +17,6 @@ export default {
 
 		for (const path of STATIC_PRERENDER_PATHS) {
 			paths.add(path);
-		}
-
-		for (const product of productsWithDetails()) {
-			paths.add(`${ROUTES.products}/${product.slug}`);
 		}
 
 		for await (const entry of glob("**/*.mdx", { cwd: CONTENT_DIRS.docs })) {

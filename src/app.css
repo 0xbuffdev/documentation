@@ -354,7 +354,7 @@
 
 /* Drafting guidelines that draw themselves out from an edge on load, and the
    crosshair markers that pop in where two rules meet. Used by the memofs-style
-   hero boxes (`not-found`, `changelog`) and `Crosshair`
+   hero boxes (`not-found`) and `Crosshair`
    (`components/crosshair.tsx`). Respect for reduced motion comes from the
    base-layer catch-all, which flattens their duration. */
 @keyframes lineDrawX {
@@ -393,23 +393,6 @@
     transform: scale(1);
     opacity: 1;
   }
-}
-
-/* Blueprint product diagrams (`components/products/product-illustration.tsx`):
-   a highlighted path draws itself in once on mount. Paths opt in by carrying
-   `pathLength={1}` and the utility class, so one keyframe serves every shape
-   (path/rect/polyline all honour pathLength). Reduced-motion comes from the
-   base-layer catch-all, which flattens the duration to a completed state. */
-@keyframes diagram-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@utility diagram-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: diagram-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
 }
 
 @utility animate-line-x {

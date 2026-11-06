@@ -44,7 +44,6 @@ export const CONTENT_DIRS = {
 
 /** Outbound company pages shared by the header and footer. */
 export const COMPANY_LINKS = {
-	changelog: `${SITE.companyUrl}/changelog`,
 	notes: `${SITE.companyUrl}/notes`,
 } as const;
 
@@ -57,7 +56,6 @@ export const LEGAL_LINKS = {
 /** Canonical internal routes shared by navigation, metadata, and prerendering. */
 export const ROUTES = {
 	home: "/",
-	products: "/products",
 	docs: "/docs",
 	introduction: "/docs/introduction",
 	core: "/docs/core",
@@ -97,12 +95,6 @@ export const PRIMARY_NAVIGATION = [
 		text: "MemoFS Manifesto",
 		url: ROUTES.manifesto,
 		active: "url",
-		on: "all",
-	},
-	{
-		text: "Changelog",
-		url: COMPANY_LINKS.changelog,
-		external: true,
 		on: "all",
 	},
 	{

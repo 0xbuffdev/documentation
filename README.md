@@ -1,12 +1,11 @@
-# 0xBUFF Products & Documentation
+# MemoFS Documentation
 
-The public home for 0xBUFF products and their documentation. Explore engineering tools and practical learning products, read product overviews, MemoFS guides, and technical references. Product overviews live at `/products/<name>`; MemoFS documentation lives at `/docs`. This React Router + Fumadocs app is deployed to Cloudflare Pages.
+The public home for MemoFS documentation — guides and technical references for MemoFS, its agents, connectors, and tooling. Docs live at `/docs`; the MemoFS Manifesto lives at `/manifesto`; the site root redirects to `/docs`. This React Router + Fumadocs app is deployed to Cloudflare Pages.
 
 ## Architecture
 
 - `content/docs/` is the single source of truth for MemoFS documentation. It powers the docs pages, search index, sitemap, and LLM text exports.
 - `src/lib/site.ts` owns public URLs, internal route constants, and shared navigation data.
-- `src/lib/products.ts` owns the documentation site's product index and product overviews.
 - `src/lib/meta.ts` produces consistent canonical, Open Graph, and Twitter metadata.
 - `functions/subscribe.ts` is the only server-side endpoint. Everything else is prerendered into `build/client` and served statically by Cloudflare Pages.
 
@@ -33,6 +32,6 @@ npm run typecheck
 npm run build
 ```
 
-Deploy `build/client` as the Cloudflare Pages output directory. Cloudflare discovers the `functions/` directory and deploys `/subscribe` as a Pages Function alongside the static output.
+Deploy `build/client` as the Cloudflare Pages output directory. `/` redirects to `/docs` via a prerendered meta refresh.
 
 For local newsletter development, copy `.dev.vars.example` to `.dev.vars` and set `RESEND_API_KEY`. In Cloudflare Pages, configure `RESEND_API_KEY` as a secret; `RESEND_SEGMENT_ID` and `RESEND_FROM` are non-secret vars in `wrangler.jsonc`.

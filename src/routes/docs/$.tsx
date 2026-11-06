@@ -1,6 +1,5 @@
 import * as fs from "node:fs";
 import * as pathModule from "node:path";
-import { redirect } from "react-router";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import {
@@ -18,19 +17,15 @@ import { baseOptions } from "../../lib/layout.shared";
 import { createPageMeta } from "../../lib/meta";
 import { createRelativeLink } from "../../lib/relative-link";
 import { getPageImagePath } from "../../lib/shared";
-import { COMPANY_LINKS, CONTENT_DIRS, ROUTES, SITE } from "../../lib/site";
+import {
+	CONTENT_DIRS,
+	SITE,
+} from "../../lib/site";
 import { docs, resolveDocPage, source } from "../../lib/source";
 import type { Route } from "./+types/$";
 
-function isCompanyChangelog(slug: string): boolean {
-	return slug.replace(/\.(data|md|mdx)$/, "") === "changelog";
-}
-
 export async function loader({ params, request }: Route.LoaderArgs) {
 	const rawSlug = (params as Record<string, string | undefined>)["*"] ?? "";
-	if (isCompanyChangelog(rawSlug)) {
-		return redirect(COMPANY_LINKS.changelog);
-	}
 	const isMarkdownRequested =
 		rawSlug.endsWith(".md") ||
 		rawSlug.endsWith(".mdx") ||
@@ -86,9 +81,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 	const rawSlug = (params as Record<string, string | undefined>)["*"] ?? "";
-	if (isCompanyChangelog(rawSlug)) {
-		return redirect(COMPANY_LINKS.changelog);
-	}
 	const { page } = resolveDocPage(rawSlug);
 
 	return {

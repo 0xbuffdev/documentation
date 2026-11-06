@@ -1,66 +1,47 @@
-import { cn } from "~/lib/utils";
 import { Link } from "react-router";
-import { PAGE_COLUMN, RULED_BAND_TOP } from "~/components/frame";
-import {
-	type Division,
-	productLink,
-	products,
-} from "~/lib/products";
-import { COMPANY_LINKS, LEGAL_LINKS, ROUTES, SITE } from "~/lib/site";
 import { BrandWordmark } from "~/components/brand-wordmark";
+import { PAGE_COLUMN, RULED_BAND_TOP } from "~/components/frame";
+import { COMPANY_LINKS, LEGAL_LINKS, ROUTES, SITE } from "~/lib/site";
+import { cn } from "~/lib/utils";
 
 /**
- * The footer, carried over from the 0xBUFF marketing site: mono link columns
- * in the page column, an oversized wordmark against the dotted backdrop, and a
- * ruled meta band at the very bottom.
+ * The docs site footer: mono link columns in the page column, an oversized
+ * wordmark against the dotted backdrop, and a ruled meta band at the bottom.
  *
- * The two product columns are derived from `products` through the same
- * `productLink()` the catalogue cards use, so the footer cannot send someone
- * to a different place than the card for the same product.
  * Every destination in this list is a real page — there is no `#` filler.
  */
 type FooterLink = { label: string; href: string; external?: boolean };
 
-const productLinks = (division: Division): FooterLink[] =>
-	products
-		.filter((product) => product.division === division)
-		.map((product) => {
-			const link = productLink(product);
-			return { href: link.href, external: link.external, label: product.name };
-		});
-
 const COLUMNS: { title: string; links: FooterLink[] }[] = [
-	{ title: "TOOLS", links: productLinks("tools") },
 	{
-		title: "0xBUFF",
+		title: "docs",
 		links: [
-			{ label: "products", href: ROUTES.home },
-			{ label: "notes", href: COMPANY_LINKS.notes, external: true },
-			{
-				label: "changelog",
-				href: COMPANY_LINKS.changelog,
-				external: true,
-			},
+			{ label: "documentation", href: ROUTES.docs },
+			{ label: "memo fs manifesto", href: ROUTES.manifesto },
+			{ label: "llms.txt", href: ROUTES.llms },
 		],
 	},
 	{
-		title: "LEGAL",
+		title: "company",
+		links: [{ label: "notes", href: COMPANY_LINKS.notes, external: true }],
+	},
+	{
+		title: "legal",
 		links: [
 			{ label: "Privacy Policy", href: LEGAL_LINKS.privacy, external: true },
 			{ label: "Terms of Service", href: LEGAL_LINKS.terms, external: true },
 		],
 	},
 	{
-		title: "SOCIAL",
+		title: "social",
 		links: [
 			{ label: "X", href: SITE.xUrl, external: true },
 			{ label: "github", href: SITE.githubUrl, external: true },
 		],
 	},
-	{ title: "EDUCATION", links: productLinks("education") },
 ];
 
-const productLinkClassName =
+const footerLinkClassName =
 	"font-mono text-muted-foreground text-sm transition-colors hover:text-foreground";
 
 export function Footer({
@@ -80,7 +61,7 @@ export function Footer({
 		<footer className={hasPrecedingRule ? undefined : RULED_BAND_TOP}>
 			<div className="overflow-hidden">
 				<div className={cn("mx-auto px-4 pt-20 md:px-8", PAGE_COLUMN)}>
-					<div className="grid grid-cols-2 gap-10 md:grid-cols-3 lg:grid-cols-5">
+					<div className="grid grid-cols-2 gap-10 md:grid-cols-4">
 						{COLUMNS.map((column) => (
 							<nav aria-label={column.title} key={column.title}>
 								<p className="font-mono text-primary text-xs">{column.title}</p>
@@ -89,7 +70,7 @@ export function Footer({
 										<li key={link.label}>
 											{link.external ? (
 												<a
-													className={productLinkClassName}
+													className={footerLinkClassName}
 													href={link.href}
 													rel="noopener noreferrer"
 													target="_blank"
@@ -103,7 +84,7 @@ export function Footer({
 													</span>
 												</a>
 											) : (
-												<Link className={productLinkClassName} to={link.href}>
+												<Link className={footerLinkClassName} to={link.href}>
 													{link.label}
 												</Link>
 											)}

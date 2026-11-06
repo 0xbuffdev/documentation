@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"description": "0xBUFF product catalog and documentation site, with product overviews and technical references.",
+	"description": "MemoFS documentation site — guides and technical references, served from docs.0xbuff.com.",
 	"homepage": "https://docs.0xbuff.com/",
 	"repository": {
 		"type": "git",

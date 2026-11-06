@@ -1,31 +1,28 @@
-import { HomeLayout } from "fumadocs-ui/layouts/home";
-import { Footer } from "~/components/footer";
-import { PageRails } from "~/components/frame";
-import { ProductsExplorer } from "~/components/products/products-explorer";
-import { baseOptions } from "~/lib/layout.shared";
-import { createPageMeta } from "~/lib/meta";
+import { redirect } from "react-router";
 import { ROUTES, SITE } from "~/lib/site";
 import type { Route } from "./+types/index";
 
-export const meta: Route.MetaFunction = () =>
-	createPageMeta({
-		title: SITE.title,
-		description: SITE.description,
-		path: ROUTES.home,
-	});
-
 /**
- * `/` — the 0xBUFF products page, carried into the docs site: PageHero with
- * the filter bar, then the catalogue frame, straight into the footer.
+ * `/` — the docs site has no landing page of its own: it redirects to the
+ * docs root. `react-router.config.ts` prerenders this route, so the served
+ * HTML carries a meta refresh — the loader redirect only covers SSR/dev.
  */
-export default function ProductsIndex() {
+export const meta: Route.MetaFunction = () => [
+	{ title: `Redirecting… | ${SITE.name}` },
+	{ name: "robots", content: "noindex, nofollow" },
+	{ httpEquiv: "refresh", content: `0; url=${ROUTES.docs}` },
+];
+
+export function loader() {
+	throw redirect(ROUTES.docs);
+}
+
+export default function HomeRedirect() {
 	return (
-		<HomeLayout {...baseOptions()}>
-			<main className="flex-1">
-				<PageRails />
-				<ProductsExplorer />
-			</main>
-			<Footer />
-		</HomeLayout>
+		<main className="flex min-h-dvh items-center justify-center font-mono text-muted-foreground text-sm">
+			<p>
+				redirecting to <a href={ROUTES.docs}>/docs</a>…
+			</p>
+		</main>
 	);
 }

@@ -6,7 +6,7 @@ import { baseOptions } from "../lib/layout.shared";
 import { createPageMeta } from "../lib/meta";
 import { createRelativeLink } from "../lib/relative-link";
 import { ROUTES } from "../lib/site";
-import { manifestoDocs } from "../lib/source";
+import { manifestoDocs } from "../lib/docs";
 import type { Route } from "./+types/manifesto";
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {

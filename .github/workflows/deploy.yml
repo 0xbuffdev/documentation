@@ -1,0 +1,106 @@
+name: Deploy
+
+# Deploys the docs site after CI-worthy pushes:
+#   - merges to `staging` deploy the `staging` Worker environment
+#     (0xbuff-docs-staging, staging.docs.0xbuff.com)
+#   - merges to `main` deploy the production Worker environment
+#     (0xbuff-docs, docs.0xbuff.com)
+on:
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions: {}
+
+env:
+  # API token needs:
+  #   Account → Workers Scripts:Edit, Workers KV Stores:Edit (not used today)
+  #   Zone (0xbuff.com) → Zone Settings:Edit, DNS:Edit (custom domains)
+  # Account ID is not secret, but keep it in CI config for scoping.
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Tests
+        run: pnpm test
+
+      # The vite plugin emits a redirected deploy config that ignores
+      # `wrangler --env` overrides, so staging gets its own derived config
+      # (scripts/stage-deploy.mjs): service 0xbuff-docs-staging on
+      # staging.docs.0xbuff.com, same worker bundle and bindings.
+      #
+      # Worker secrets are not passed through CI: set them once per
+      # environment from an authenticated shell, never in the repo.
+      #   production: pnpm exec wrangler secret put RESEND_API_KEY
+      #   staging:    pnpm exec wrangler secret put RESEND_API_KEY -c build/server/wrangler.staging.json
+      - name: Deploy staging
+        id: deploy-staging
+        if: github.ref_name == 'staging'
+        run: |
+          node scripts/stage-deploy.mjs
+          pnpm exec wrangler deploy -c build/server/wrangler.staging.json
+
+      - name: Deploy production
+        id: deploy-production
+        if: github.ref_name == 'main'
+        run: pnpm exec wrangler deploy
+
+      - name: Smoke test
+        if: steps.deploy-staging.outcome == 'success' || steps.deploy-production.outcome == 'success'
+        run: |
+          case "$REF" in
+            staging)
+              URL=https://staging.docs.0xbuff.com
+              ;;
+            main)
+              URL=https://docs.0xbuff.com
+              ;;
+            *)
+              echo "no smoke target for $REF" && exit 0
+              ;;
+          esac
+          curl -fsS "$URL/llms.txt" | head -n 4
+          curl -fsS "$URL/llms-full.txt" | head -n 4
+          curl -fsS "$URL/robots.txt" | head -n 2
+          echo "sitemap routes:"
+          curl -fsS "$URL/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | head -n 12
+
+          # Newsletter must be wired: an invalid probe must hit the form
+          # validation path (400) without creating a real Resend contact.
+          status="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL/subscribe" \
+            --data-urlencode "email=invalid")"
+          echo "POST /subscribe (invalid probe) -> $status"
+          case "$status" in
+            400) exit 0 ;;
+            503) echo "newsletter not configured yet: set RESEND_API_KEY as a Worker secret" ;;
+            *) echo "unexpected newsletter status $status" && exit 1 ;;
+          esac
+        env:
+          REF: ${{ github.ref_name }}

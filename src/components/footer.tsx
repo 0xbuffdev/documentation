@@ -1,12 +1,15 @@
 import { Link } from "react-router";
 import { BrandWordmark } from "~/components/brand-wordmark";
-import { PAGE_COLUMN, RULED_BAND_TOP } from "~/components/frame";
+import { RULED_BAND_TOP } from "~/components/frame";
 import { COMPANY_LINKS, LEGAL_LINKS, ROUTES, SITE } from "~/lib/site";
 import { cn } from "~/lib/utils";
 
 /**
- * The docs site footer: mono link columns in the page column, an oversized
- * wordmark against the dotted backdrop, and a ruled meta band at the bottom.
+ * The docs site footer: four link columns mirroring the 0xBUFF company footer
+ * (products → education → resources → company + connect), with a docs-specific
+ * first column for documentation links (sitemap, llms.txt, etc.).
+ *
+ * The bottom bar renders legal links and the branded sign-off.
  *
  * Every destination in this list is a real page — there is no `#` filler.
  */
@@ -14,29 +17,40 @@ type FooterLink = { label: string; href: string; external?: boolean };
 
 const COLUMNS: { title: string; links: FooterLink[] }[] = [
 	{
-		title: "docs",
+		title: "products",
 		links: [
-			{ label: "documentation", href: ROUTES.docs },
-			{ label: "memo fs manifesto", href: ROUTES.manifesto },
+			{ label: "Products", href: `${SITE.companyUrl}/products`, external: true },
+			{ label: "Pricing", href: `${SITE.companyUrl}/pricing`, external: true },
+			{ label: "Documentation", href: ROUTES.docs },
+		],
+	},
+	{
+		title: "education",
+		links: [
+			{ label: "0xNAND", href: "https://nand.0xbuff.com", external: true },
+			{ label: "OEE", href: "https://github.com/0xbuffdev/open-engineering-education", external: true },
+			{ label: "Mentorship", href: `${SITE.companyUrl}/mentorship`, external: true },
+		],
+	},
+	{
+		title: "resources",
+		links: [
+			{ label: "Notes", href: COMPANY_LINKS.notes, external: true },
+			{ label: "Changelog", href: COMPANY_LINKS.changelog, external: true },
+			{ label: "The Dispatch", href: `${SITE.companyUrl}/dispatch`, external: true },
+			{ label: "MemoFS Manifesto", href: ROUTES.manifesto },
 			{ label: "llms.txt", href: ROUTES.llms },
+			{ label: "Sitemap", href: ROUTES.sitemap },
 		],
 	},
 	{
 		title: "company",
-		links: [{ label: "notes", href: COMPANY_LINKS.notes, external: true }],
-	},
-	{
-		title: "legal",
 		links: [
-			{ label: "Privacy Policy", href: LEGAL_LINKS.privacy, external: true },
-			{ label: "Terms of Service", href: LEGAL_LINKS.terms, external: true },
-		],
-	},
-	{
-		title: "social",
-		links: [
+			{ label: "About", href: `${SITE.companyUrl}/about`, external: true },
 			{ label: "X", href: SITE.xUrl, external: true },
-			{ label: "github", href: SITE.githubUrl, external: true },
+			{ label: "GitHub", href: SITE.githubUrl, external: true },
+			{ label: "YouTube", href: SITE.youtubeUrl, external: true },
+			{ label: SITE.forkEmail, href: `mailto:${SITE.forkEmail}` },
 		],
 	},
 ];
@@ -44,27 +58,23 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 const footerLinkClassName =
 	"font-mono text-muted-foreground text-sm transition-colors hover:text-foreground";
 
-export function Footer({
-	hasPrecedingRule = false,
-}: {
-	/**
-	 * True when the element above the footer already ends in a full-bleed
-	 * ruled band (e.g. a navigate band), so the footer should not draw a
-	 * second rule along the same seam.
-	 */
-	hasPrecedingRule?: boolean;
-}) {
+export function Footer() {
+	const year = new Date().getFullYear();
+
 	return (
-		// `overflow-hidden` (which contains the oversized wordmark) lives on an inner
-		// wrapper, not on the band: on the band it would clip the half of the
-		// intersection marker that sits above the footer's top rule.
-		<footer className={hasPrecedingRule ? undefined : RULED_BAND_TOP}>
+		
+		<footer className={RULED_BAND_TOP}>
 			<div className="overflow-hidden">
-				<div className={cn("mx-auto px-4 pt-20 md:px-8", PAGE_COLUMN)}>
-					<div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+				<div className="mx-auto w-full max-w-5xl px-6 pt-16 md:px-8 md:pt-20">
+					<nav
+						aria-label="Footer"
+						className="grid grid-cols-2 gap-x-12 gap-y-10 lg:grid-cols-4"
+					>
 						{COLUMNS.map((column) => (
-							<nav aria-label={column.title} key={column.title}>
-								<p className="font-mono text-primary text-xs">{column.title}</p>
+							<div key={column.title}>
+								<p className="font-mono text-primary text-xs uppercase tracking-wider">
+									{column.title}
+								</p>
 								<ul className="mt-4 space-y-2.5">
 									{column.links.map((link) => (
 										<li key={link.label}>
@@ -91,16 +101,19 @@ export function Footer({
 										</li>
 									))}
 								</ul>
-							</nav>
+							</div>
 						))}
-					</div>
+					</nav>
 				</div>
 
 				{/* Oversized wordmark. `aria-hidden` because the real brand name
 				    is already in the header's link label. */}
 				<p
 					aria-hidden="true"
-					className="mt-16 select-none text-center font-bold font-display text-[19vw] text-foreground/[0.05] leading-[0.8] tracking-tighter xl:text-[15rem]"
+					className={cn(
+						"mt-12 select-none text-center font-bold font-display text-[18vw]",
+						"text-foreground/[0.04] leading-none tracking-tighter xl:text-[14rem]",
+					)}
 				>
 					<BrandWordmark accentClassName="text-primary/20" />
 				</p>
@@ -109,21 +122,35 @@ export function Footer({
 			<div className={RULED_BAND_TOP}>
 				<div
 					className={cn(
-						"mx-auto flex flex-col justify-between gap-2 px-4 py-5 font-mono text-muted-foreground text-xs md:flex-row md:px-8",
-						PAGE_COLUMN,
+						"mx-auto flex w-full max-w-5xl flex-col items-center justify-between gap-4 px-6 py-5 sm:px-10 md:px-16",
+						"font-mono text-muted-foreground text-xs sm:flex-row sm:flex-wrap",
 					)}
 				>
-					<span>© 2026 0xBUFF. All processes reserved.</span>
+					<span>© {year} 0xBUFF. All rights reserved.</span>
 					<span>
 						<a
-							className="hover:text-foreground"
-							href={`mailto:${SITE.forkEmail}`}
+							className="transition-colors hover:text-foreground"
+							href={LEGAL_LINKS.privacy}
+							target="_blank"
+							rel="noopener noreferrer"
 						>
-							{SITE.forkEmail}
+							Privacy Policy
 						</a>
-						{" · "}
-						<span className="text-primary">EOF</span> · process exited with code
-						0
+						{" "}
+						<span className="text-primary">/</span>
+						{" "}
+						<a
+							className="transition-colors hover:text-foreground"
+							href={LEGAL_LINKS.terms}
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							Terms of Service
+						</a>
+						{" "}
+						<span className="text-primary">/</span>
+						{" "}
+						<span className="text-primary">EOF</span>
 					</span>
 				</div>
 			</div>

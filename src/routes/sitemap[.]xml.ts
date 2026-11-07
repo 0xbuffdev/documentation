@@ -19,11 +19,7 @@ export function loader() {
 			.map((page) => ({
 				loc: toSiteUrl(page.url),
 				changefreq: "weekly",
-				priority: page.url.startsWith(ROUTES.introduction)
-					? "0.9"
-					: page.url.startsWith(ROUTES.core)
-						? "0.8"
-						: "0.7",
+				priority: page.url === ROUTES.docsDefault ? "0.9" : "0.8",
 			})),
 	];
 

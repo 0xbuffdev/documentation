@@ -10,22 +10,32 @@ import {
 	EditOnGitHub,
 	PageLastUpdate,
 } from "fumadocs-ui/layouts/docs/page";
+import { redirect } from "react-router";
+import type { TOCItemType } from "fumadocs-core/toc";
 import { LLMCopyButton, ViewOptions } from "../../components/ai/page-actions";
 import { getMDXComponents } from "../../components/mdx";
-import { getLLMText } from "../../lib/get-llm-text";
 import { baseOptions } from "../../lib/layout.shared";
 import { createPageMeta } from "../../lib/meta";
 import { createRelativeLink } from "../../lib/relative-link";
 import { getPageImagePath } from "../../lib/shared";
 import {
 	CONTENT_DIRS,
+	ROUTES,
 	SITE,
 } from "../../lib/site";
-import { docs, resolveDocPage, source } from "../../lib/source";
+import { docs } from "../../lib/docs";
+import { resolveDocPage, source } from "../../lib/source";
+import tools from "../../lib/tools.generated.json";
 import type { Route } from "./+types/$";
 
 export async function loader({ params, request }: Route.LoaderArgs) {
 	const rawSlug = (params as Record<string, string | undefined>)["*"] ?? "";
+
+	// Redirect bare /docs to the default product.
+	if (rawSlug === "" || rawSlug === "/") {
+		throw redirect(ROUTES.docsDefault);
+	}
+
 	const isMarkdownRequested =
 		rawSlug.endsWith(".md") ||
 		rawSlug.endsWith(".mdx") ||
@@ -34,13 +44,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	const { page } = resolveDocPage(rawSlug);
 
 	if (isMarkdownRequested) {
-		const markdown = await getLLMText(page);
-		return new Response(markdown, {
-			headers: {
-				"Content-Type": "text/markdown; charset=utf-8",
-				Vary: "Accept",
-				"Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
-			},
+		throw redirect(`/llms.mdx/docs/${page.slugs.join("/")}`, {
+			headers: { Vary: "Accept" },
 		});
 	}
 
@@ -68,30 +73,32 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 		}
 	}
 
+	const tree = source.getPageTree();
+	const availableUrls = new Set(tools.map(({ slug }) => `${ROUTES.docs}/${slug}`));
+	const sidebarTree = {
+		...tree,
+		children: tree.children.filter((node) =>
+			node.type === "folder" &&
+			node.children.some((child) => child.type === "page" && availableUrls.has(child.url.replace(/\/$/, ""))),
+		),
+	};
+
 	return {
+		toc: (await page.data.load()).toc as unknown as TOCItemType[],
 		path: page.path,
 		url: page.url,
 		title: page.data.title,
 		description: page.data.description,
 		imagePath: getPageImagePath(page.slugs),
 		lastModified,
-		pageTree: await source.serializePageTree(source.getPageTree()),
+		pageTree: await source.serializePageTree(sidebarTree),
 	};
 }
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-	const rawSlug = (params as Record<string, string | undefined>)["*"] ?? "";
-	const { page } = resolveDocPage(rawSlug);
-
-	return {
-		path: page.path,
-		url: page.url,
-		title: page.data.title,
-		description: page.data.description,
-		imagePath: getPageImagePath(page.slugs),
-		lastModified: undefined as number | undefined,
-		pageTree: await source.serializePageTree(source.getPageTree()),
-	};
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+	const data = await serverLoader();
+	await docs.getPage(data.path)?.preload();
+	return data;
 }
 
 export const meta: Route.MetaFunction = ({  loaderData }) => {
@@ -108,10 +115,12 @@ function Content({
 	path,
 	url,
 	lastModified,
+	toc,
 }: {
 	path: string;
 	url: string;
 	lastModified?: number;
+	toc: TOCItemType[];
 }) {
 	const page = docs.getPage(path);
 	if (!page) throw new Error(`unknown page: ${path}`);
@@ -124,7 +133,7 @@ function Content({
 
 	return (
 		<DocsPage
-			toc={page.toc}
+			toc={toc}
 			tableOfContent={{ style: "clerk" }}
 			className="max-w-3xl px-4 sm:px-6"
 		>
@@ -154,10 +163,13 @@ export default function Page({ loaderData }: Route.ComponentProps) {
 
 	return (
 		<DocsLayout {...baseOptions()} tree={pageTree}>
+			{/* SerializeFrom widens `toc.title` to the MDX macro's loose node
+			    type; the wire format is plain JSON, so re-narrow it here. */}
 			<Content
 				path={path}
 				url={loaderData.url}
 				lastModified={loaderData.lastModified}
+				toc={loaderData.toc as unknown as TOCItemType[]}
 			/>
 		</DocsLayout>
 	);

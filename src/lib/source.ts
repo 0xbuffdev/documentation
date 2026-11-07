@@ -1,25 +1,21 @@
 import { loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/plugins/lucide-icons";
-import { defineDocs } from "fumadocs-mdx/macro";
-import { CONTENT_DOCS_OPTIONS } from "./content-options";
+import { docs, manifestoDocs } from "./docs";
 import { ROUTES } from "./site";
 
-export const docs = defineDocs({
-	// Fumadocs requires a literal; keep it aligned with docs-config.json.
-	dir: "content/docs",
-	...CONTENT_DOCS_OPTIONS,
-});
+export { docs, manifestoDocs };
 
+/**
+ * Server-side page-tree loader.
+ *
+ * Only loaders and other server entry points should import this module: the
+ * lucide icon plugin inlines the full `lucide-react` icon set, which we do not
+ * want in the client bundle. Route client code imports from `./docs` instead.
+ */
 export const source = loader({
 	baseUrl: ROUTES.docs,
 	source: docs.toFumadocsSource(),
 	plugins: [lucideIconsPlugin()],
-});
-
-export const manifestoDocs = defineDocs({
-	// Fumadocs requires a literal; keep it aligned with docs-config.json.
-	dir: "content/manifesto",
-	...CONTENT_DOCS_OPTIONS,
 });
 
 /**

@@ -1,22 +1,14 @@
 /**
- * Cloudflare Pages Function for newsletter subscriptions. This owns the only
- * server-side docs action; the React app is otherwise deployed as static
- * prerendered output.
+ * Newsletter subscription resource route.
+ *
+ * Replaces the former Cloudflare Pages Function (`functions/subscribe.ts`).
+ * Runs as part of the Worker; accesses env bindings through the Cloudflare
+ * load context injected by `@cloudflare/vite-plugin`.
  */
 
-import { SITE } from "../src/lib/site";
-
-interface Env {
-	RESEND_API_KEY?: string;
-	RESEND_SEGMENT_ID?: string;
-	RESEND_FROM?: string;
-}
-
-interface EventContext {
-	request: Request;
-	env: Env;
-	waitUntil(promise: Promise<unknown>): void;
-}
+import { SITE } from "~/lib/site";
+import { cloudflareContext } from "~/lib/cloudflare-context";
+import type { Route } from "./+types/subscribe";
 
 interface Bucket {
 	count: number;
@@ -64,15 +56,15 @@ function isRateLimited(ip: string): boolean {
 async function sendWelcomeEmail(apiKey: string, from: string, to: string) {
 	const html = `
 		<div style="font-family: ui-sans-system, -apple-system, Segoe UI, Roboto, sans-serif; line-height: 1.6; color: #111; max-width: 560px; margin: 0 auto; padding: 24px;">
-			<h1 style="font-size: 20px; margin: 0 0 12px;">You're in — welcome to MemoFS</h1>
-			<p style="margin: 0 0 12px;">Thanks for subscribing to the MemoFS changelog & newsletter.</p>
+			<h1 style="font-size: 20px; margin: 0 0 12px;">You're in — welcome to 0xBUFF</h1>
+			<p style="margin: 0 0 12px;">Thanks for subscribing to the 0xBUFF changelog & newsletter.</p>
 			<p style="margin: 0 0 12px;">You'll get new releases, architecture highlights, and deep dives straight to your inbox.</p>
 			<p style="margin: 24px 0 0;">
 				<a href="${SITE.docsUrl}" style="color: #111; text-decoration: underline;">Read the docs</a> ·
 				<a href="${SITE.githubUrl}" style="color: #111; text-decoration: underline;">Star on GitHub</a> ·
-				<a href="${SITE.cloudUrl}" style="color: #111; text-decoration: underline;">MemoFS Cloud</a>
+				<a href="${SITE.companyUrl}" style="color: #111; text-decoration: underline;">0xBUFF</a>
 			</p>
-			<p style="margin: 24px 0 0; font-size: 12px; color: #666;">You’re receiving this because you subscribed at ${SITE.docsUrl}. Unsubscribe anytime via the link in future emails.</p>
+			<p style="margin: 24px 0 0; font-size: 12px; color: #666;">You're receiving this because you subscribed at ${SITE.docsUrl}. Unsubscribe anytime via the link in future emails.</p>
 		</div>
 	`.trim();
 
@@ -81,21 +73,23 @@ async function sendWelcomeEmail(apiKey: string, from: string, to: string) {
 		headers: {
 			Authorization: `Bearer ${apiKey}`,
 			"Content-Type": "application/json",
-			"User-Agent": "memofs-docs-newsletter/1.0",
+			"User-Agent": "0xbuff-docs-newsletter/1.0",
 		},
 		body: JSON.stringify({
 			from,
 			to,
-			subject: "Welcome to MemoFS — you're subscribed",
+			subject: "Welcome to 0xBUFF — you're subscribed",
 			html,
 		}),
 	});
 }
 
-/** Handles newsletter form posts through the Pages Functions runtime. */
-export async function onRequestPost(context: EventContext): Promise<Response> {
-	const { request, env } = context;
-	const { RESEND_API_KEY, RESEND_SEGMENT_ID, RESEND_FROM } = env;
+/** Handles newsletter form posts through the Worker runtime. */
+export async function action({ request, context }: Route.ActionArgs) {
+	const { env, ctx } = context.get(cloudflareContext);
+	const RESEND_API_KEY = env.RESEND_API_KEY;
+	const RESEND_SEGMENT_ID = env.RESEND_SEGMENT_ID;
+	const RESEND_FROM = env.RESEND_FROM;
 
 	if (!RESEND_API_KEY || !RESEND_SEGMENT_ID) {
 		return jsonResponse({ error: "Newsletter is not configured." }, 503);
@@ -128,7 +122,7 @@ export async function onRequestPost(context: EventContext): Promise<Response> {
 			headers: {
 				Authorization: `Bearer ${RESEND_API_KEY}`,
 				"Content-Type": "application/json",
-				"User-Agent": "memofs-docs-newsletter/1.0",
+				"User-Agent": "0xbuff-docs-newsletter/1.0",
 			},
 			body: JSON.stringify({
 				email,
@@ -147,9 +141,8 @@ export async function onRequestPost(context: EventContext): Promise<Response> {
 
 	if (contactResponse.ok) {
 		if (RESEND_FROM) {
-			context.waitUntil(
-				sendWelcomeEmail(RESEND_API_KEY, RESEND_FROM, email).catch(() => {}),
-			);
+			// Fire-and-forget the welcome email.
+			ctx.waitUntil(sendWelcomeEmail(RESEND_API_KEY, RESEND_FROM, email).catch(() => {}));
 		}
 		return jsonResponse({ ok: true });
 	}

@@ -1,10 +1,11 @@
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { fumadocsMdx } from "fumadocs-mdx/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-	plugins: [fumadocsMdx(), tailwindcss(), reactRouter()],
+	plugins: [cloudflare({ viteEnvironment: { name: "ssr" } }), fumadocsMdx(), tailwindcss(), reactRouter()],
 	resolve: {
 		tsconfigPaths: true,
 	},

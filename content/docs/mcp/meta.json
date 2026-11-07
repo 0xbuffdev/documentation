@@ -1,5 +1,0 @@
-{
-	"title": "MCP Server",
-	"icon": "Layers",
-	"pages": ["index", "hybrid-mode", "hosted-mcp-endpoint"]
-}

@@ -1,9 +1,16 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "0xbuff-docs",
-	"pages_build_output_dir": "./build/client",
+	"main": "./workers/app.ts",
 	"compatibility_date": "2026-07-15",
 	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"directory": "./build/client"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"routes": [{ "pattern": "docs.0xbuff.com", "custom_domain": true }],
 	"vars": {
 		"RESEND_SEGMENT_ID": "35f954a3-f5b7-4f40-8c61-032710a93bb3",
 		"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>"

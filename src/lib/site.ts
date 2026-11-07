@@ -1,9 +1,10 @@
 import docsConfig from "./docs-config.json";
+import tools from "./tools.generated.json";
 
 /**
  * Canonical site identity, navigation, and static-route metadata for the docs
  * application. Keep public URLs and shared labels here so layouts, metadata,
- * sitemap generation, and Pages Functions stay in sync.
+ * sitemap generation, and Workers stay in sync.
  */
 
 /** Public 0xBUFF URLs, brand identity, and default social metadata. */
@@ -16,13 +17,13 @@ export const SITE = {
 	wordmark: { prefix: BRAND_PREFIX, accent: BRAND_ACCENT },
 	title: "Tools to build with. Mastery to build well.",
 	description:
-		"Tools for engineers who work with AI agents, and 0xNAND, a mastery platform that teaches software engineering from the ground up.",
+		"Documentation for Throughline, the interactive step-player for learning and teaching complex systems, from 0xBUFF.",
 	companyUrl: "https://0xbuff.com",
 	docsUrl: "https://docs.0xbuff.com",
-	cloudUrl: "https://cloud.memofs.dev",
 	githubUrl: "https://github.com/0xbuffdev/documentation",
-	xUrl: "https://x.com/0xbuffdev",
-	xHandle: "@0xbuffdev",
+	xUrl: "https://x.com/0xbvff",
+	xHandle: "@0xbvff",
+	youtubeUrl: "https://youtube.com/@0xbuff",
 	/** General inbox, shown in the footer's meta band. */
 	forkEmail: "fork@0xbuff.dev",
 	defaultImagePath: BRAND_ICON_PATH,
@@ -44,6 +45,7 @@ export const CONTENT_DIRS = {
 
 /** Outbound company pages shared by the header and footer. */
 export const COMPANY_LINKS = {
+	changelog: `${SITE.companyUrl}/changelog`,
 	notes: `${SITE.companyUrl}/notes`,
 } as const;
 
@@ -57,12 +59,8 @@ export const LEGAL_LINKS = {
 export const ROUTES = {
 	home: "/",
 	docs: "/docs",
-	introduction: "/docs/introduction",
-	core: "/docs/core",
-	mcp: "/docs/mcp",
-	cli: "/docs/cli",
-	server: "/docs/server",
-	api: "/docs/api",
+	/** Default product shown when navigating to /docs. */
+	docsDefault: tools[0] ? `/docs/${tools[0].slug}` : "/",
 	manifesto: "/manifesto",
 	docsOg: docsConfig.docsImageRoute,
 	llms: "/llms.txt",
@@ -74,12 +72,12 @@ export const ROUTES = {
 
 /** Static application pages in addition to documentation pages discovered from MDX. */
 export const STATIC_PRERENDER_PATHS = [
+	ROUTES.home,
 	ROUTES.robots,
 	ROUTES.sitemap,
 	ROUTES.llms,
 	ROUTES.llmsFull,
 	ROUTES.searchIndex,
-	ROUTES.docs,
 	ROUTES.manifesto,
 ] as const;
 
@@ -87,18 +85,30 @@ export const STATIC_PRERENDER_PATHS = [
 export const PRIMARY_NAVIGATION = [
 	{
 		text: "Documentation",
-		url: ROUTES.docs,
-		active: "url",
+		url: ROUTES.docsDefault,
+		active: "nested-url",
 		on: "all",
 	},
 	{
-		text: "MemoFS Manifesto",
-		url: ROUTES.manifesto,
-		active: "url",
+		text: "0xBUFF ↗",
+		url: SITE.companyUrl,
+		external: true,
 		on: "all",
 	},
 	{
-		text: "Notes",
+		text: "0xNAND ↗",
+		url: "https://nand.0xbuff.com",
+		external: true,
+		on: "all",
+	},
+	{
+		text: "Changelog ↗",
+		url: COMPANY_LINKS.changelog,
+		external: true,
+		on: "all",
+	},
+	{
+		text: "Notes ↗",
 		url: COMPANY_LINKS.notes,
 		external: true,
 		on: "all",

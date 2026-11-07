@@ -1,21 +1,3 @@
 {
-	"pages": [
-		"---MemoFS · Getting Started---",
-		"index",
-		"introduction",
-		"---MemoFS · Runtime & Protocols---",
-		"core",
-		"mcp",
-		"cli",
-		"adapters",
-		"connectors",
-		"---MemoFS · Self-Hosting & Cloud---",
-		"server",
-		"---MemoFS · Developer Tooling---",
-		"tooling",
-		"---MemoFS · Reference---",
-		"api",
-		"---BuildTrace---",
-		"buildtrace"
-	]
+	"pages": ["throughline"]
 }

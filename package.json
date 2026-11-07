@@ -14,6 +14,7 @@
 		"dev": "react-router dev",
 		"preview": "pnpm build && vite preview",
 		"deploy": "npm run build && wrangler deploy",
+		"deploy:staging": "npm run build && node scripts/stage-deploy.mjs && wrangler deploy -c build/server/wrangler.staging.json",
 		"start": "react-router-serve ./build/server/index.js",
 		"typecheck": "react-router typegen && tsc",
 		"sync:tools": "node scripts/sync-tools.mjs",

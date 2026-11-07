@@ -10,6 +10,7 @@
 	"observability": {
 		"enabled": true
 	},
+	"routes": [{ "pattern": "docs.0xbuff.com", "custom_domain": true }],
 	"vars": {
 		"RESEND_SEGMENT_ID": "35f954a3-f5b7-4f40-8c61-032710a93bb3",
 		"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>"

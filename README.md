@@ -19,7 +19,31 @@ By default, the sync fetches the same content commit pinned in the contract depe
 ```bash
 pnpm build
 pnpm exec vite preview
-pnpm deploy
 ```
 
-The build refreshes the tool catalog and prerenders the documentation. Set `RESEND_API_KEY` as a Cloudflare Worker secret for newsletter subscriptions. For local development, copy `.dev.vars.example` to `.dev.vars` and set the key. Non-secret newsletter configuration is in `wrangler.jsonc`. Regenerate Worker types with `pnpm exec wrangler types` after changing bindings.
+CI (`.github/workflows/`) deploys on merge; no manual deploy is required.
+
+- `staging` branch → `pnpm exec wrangler deploy -c build/server/wrangler.staging.json`
+  deploys Worker `0xbuff-docs-staging` at `https://staging.docs.0xbuff.com`. The
+  staging config is derived from the build output by `scripts/stage-deploy.mjs`:
+  the `@cloudflare/vite-plugin` emits a redirected deploy config that ignores
+  Wrangler `--env` overrides, so staging cannot be expressed as a Wrangler
+  environment. It reuses the production newsletter vars; point
+  `RESEND_SEGMENT_ID` at a test segment (in `scripts/stage-deploy.mjs`) before
+  testing live mail.
+- `main` branch → `wrangler deploy` publishes production at
+  `https://docs.0xbuff.com`.
+
+Both need repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+The token requires Workers Scripts edit plus Zone Settings and DNS edit for the
+`0xbuff.com` zone (custom-domain routes). Worker secrets are set once per
+environment from an authenticated shell, never in the repo:
+
+```bash
+pnpm exec wrangler secret put RESEND_API_KEY # production
+pnpm exec wrangler secret put RESEND_API_KEY -c build/server/wrangler.staging.json # staging
+```
+
+For local development, copy `.dev.vars.example` to `.dev.vars` and set the key.
+Non-secret newsletter configuration is in `wrangler.jsonc`. Regenerate Worker
+types with `pnpm exec wrangler types` after changing bindings.

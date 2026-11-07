@@ -10,9 +10,11 @@ pnpm dev
 pnpm typecheck
 ```
 
-The homepage catalog and docs sidebar use `src/lib/tools.generated.json`. Refresh it with `pnpm sync:tools`. The script reads product frontmatter from the content repository and validates it against `@0xbuff/content-contract`. It includes records without a destination URL when a matching `content/docs/<slug>/index.mdx` exists. Only cataloged products have documentation published on this site; there is nothing else to discover via search or the sitemap.
+Only cataloged products have documentation published on this site; there is nothing else to discover via search or the sitemap.
 
-By default, the sync fetches the same content commit pinned in the contract dependency, so the build environment needs Git access to `0xbuffdev/content`. To develop against a local checkout, set `CONTENT_REPO_PATH` to its absolute path; that override reads the checkout's working tree. Update the contract dependency commit to publish a newer catalog. Content changes require a documentation rebuild to appear.
+The homepage catalog and docs sidebar use the committed `src/lib/tools.generated.json`. Every build relies on that file as is; it never fetches the content repository, so CI installs and builds with no private-repo access. Update it deliberately with `pnpm sync:tools`: the script reads product frontmatter from the content repository, validates it against the product contract (vendored at `scripts/lib/content-contract.mjs` while the contract lives in the private repo), and includes records without a destination URL only when a matching `content/docs/<slug>/index.mdx` exists.
+
+By default the sync script fetches the commit pinned in the vendored contract, so refreshing needs Git access to `0xbuffdev/content` (works locally; not in CI). To develop against a local checkout, set `CONTENT_REPO_PATH` to its absolute path; that override reads the checkout's working tree. Update `CONTENT_REVISION` in `scripts/lib/content-contract.mjs` to publish a newer catalog. Content changes require a documentation rebuild to appear.
 
 ## Build and deploy
 

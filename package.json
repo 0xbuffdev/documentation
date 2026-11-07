@@ -10,7 +10,7 @@
 		"url": "git+https://github.com/0xbuffdev/documentation.git"
 	},
 	"scripts": {
-		"build": "pnpm sync:tools && react-router build",
+		"build": "react-router build",
 		"dev": "react-router dev",
 		"preview": "pnpm build && vite preview",
 		"deploy": "npm run build && wrangler deploy",
@@ -21,7 +21,6 @@
 		"test": "node --test scripts/*.test.mjs"
 	},
 	"dependencies": {
-		"@0xbuff/content-contract": "github:0xbuffdev/content#c4fb9c944700cd6e686d7268be25c9039fde43e2",
 		"@fontsource-variable/dm-sans": "^5.3.0",
 		"@fontsource-variable/jetbrains-mono": "^5.3.0",
 		"@fontsource-variable/orbitron": "^5.3.0",

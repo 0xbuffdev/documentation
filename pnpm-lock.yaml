@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@0xbuff/content-contract':
-        specifier: github:0xbuffdev/content#c4fb9c944700cd6e686d7268be25c9039fde43e2
-        version: git+https://git@github.com:0xbuffdev/content.git#c4fb9c944700cd6e686d7268be25c9039fde43e2
       '@fontsource-variable/dm-sans':
         specifier: ^5.3.0
         version: 5.3.0
@@ -125,10 +122,6 @@ importers:
         version: 4.156.1(@types/node@22.20.5)
 
 packages:
-
-  '@0xbuff/content-contract@git+https://git@github.com:0xbuffdev/content.git#c4fb9c944700cd6e686d7268be25c9039fde43e2':
-    resolution: {commit: c4fb9c944700cd6e686d7268be25c9039fde43e2, repo: git@github.com:0xbuffdev/content.git, type: git}
-    version: 0.0.0
 
   '@antfu/install-pkg@2.1.0':
     resolution: {integrity: sha512-sdg9NxU3zR4Mnawfbc/x6GB5Wf17WYud5qOuEuxXjaKpYpMkISSJEjItGebXJ2bQ4DIcly4NYH23mtkGJjvKUw==}
@@ -4627,10 +4620,6 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
-
-  '@0xbuff/content-contract@git+https://git@github.com:0xbuffdev/content.git#c4fb9c944700cd6e686d7268be25c9039fde43e2':
-    dependencies:
-      zod: 4.6.7
 
   '@antfu/install-pkg@2.1.0':
     dependencies:

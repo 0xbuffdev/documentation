@@ -17,34 +17,21 @@ concurrency:
 permissions: {}
 
 env:
-  # Default GITHUB_TOKEN cannot read other repositories, so for the private
-  # 0xbuffdev/content dependency set CONTENT_REPO_TOKEN to a fine-grained PAT
-  # with contents:read on 0xbuffdev/content. The `||` falls back to
-  # github.token, which suffices once the content repo is public or the token
-  # is granted org-wide.
-  # Token needs no Cloudflare permissions. CLOUDFLARE_API_TOKEN needs:
+  # CLOUDFLARE_API_TOKEN needs:
   #   Account → Workers Scripts:Edit
   #   Zone (0xbuff.com) → Zone Settings:Edit, DNS:Edit (custom domains)
   # Account ID is not secret, but keep it in CI config for scoping.
+  #
+  # The build is self-contained: the tool catalog comes from the committed
+  # src/lib/tools.generated.json and no private repo is fetched on CI.
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      # Used by the git URL rewrite below (private dependency fetches).
-      GIT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
-
-      # The pnpm lockfile fetches @0xbuff/content-contract from the private
-      # 0xbuffdev/content repo; without SSH keys the runner must clone over
-      # HTTPS with a token. Covers pnpm and the build-time tool-catalog sync.
-      - name: Configure Git to clone private GitHub deps over HTTPS
-        run: |
-          git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "git@github.com:"
-          git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - uses: pnpm/action-setup@v4
         with:

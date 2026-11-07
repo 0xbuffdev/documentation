@@ -12,17 +12,8 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    env:
-      GIT_TOKEN: ${{ secrets.CONTENT_REPO_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v4
-
-      # See deploy.yml: the private 0xbuffdev/content dependency must clone
-      # over HTTPS with a token on CI runners.
-      - name: Configure Git to clone private GitHub deps over HTTPS
-        run: |
-          git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "git@github.com:"
-          git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/"
 
       - uses: pnpm/action-setup@v4
         with:

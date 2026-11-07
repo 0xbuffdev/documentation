@@ -2,14 +2,9 @@ import { execFileSync } from "node:child_process";
 import { mkdtemp, readFile, readdir, rm, writeFile, access } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { ProductDocumentSchema } from "@0xbuff/content-contract";
+import { CONTENT_REVISION, ProductDocumentSchema } from "./lib/content-contract.mjs";
 import { parse } from "yaml";
 import docsConfig from "../src/lib/docs-config.json" with { type: "json" };
-
-const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-const contract = packageJson.dependencies["@0xbuff/content-contract"];
-const revision = contract.match(/^github:0xbuffdev\/content#([0-9a-f]{40})$/)?.[1];
-if (!revision) throw new Error("Pin @0xbuff/content-contract to a content repository commit");
 
 const local = process.env.CONTENT_REPO_PATH;
 const temp = local ? undefined : await mkdtemp(path.join(tmpdir(), "docs-content-"));
@@ -17,7 +12,7 @@ const root = local ?? path.join(temp, "content");
 try {
 	if (!local) {
 		execFileSync("git", ["init", "--quiet", root], { stdio: "inherit" });
-		execFileSync("git", ["-C", root, "fetch", "--quiet", "--depth", "1", "https://github.com/0xbuffdev/content.git", revision], { stdio: "inherit" });
+		execFileSync("git", ["-C", root, "fetch", "--quiet", "--depth", "1", "https://github.com/0xbuffdev/content.git", CONTENT_REVISION], { stdio: "inherit" });
 		execFileSync("git", ["-C", root, "checkout", "--quiet", "--detach", "FETCH_HEAD"], { stdio: "inherit" });
 	}
 	const dir = path.join(root, "content/0xbuff/products");

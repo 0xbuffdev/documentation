@@ -1,0 +1,94 @@
+---
+title: Errors and limits
+description: Diagnose malformed sources, invalid events, conflicting writes, and bounded compilation failures.
+---
+
+Throughline validates authored and generated programs before returning snapshots. It throws `ProgramError` for known compilation failures. The package intentionally rejects invalid or unbounded input instead of attempting to recover silently.
+
+## Catch source diagnostics
+
+~~~ts
+import { compile, ProgramError } from "@0xbuff/throughline";
+
+const source = [
+  "thl flow",
+  'node count "Count" = [1,2]',
+  'step "Invalid write"',
+  "set count[5] = 7",
+].join("\n");
+
+try {
+  compile(source);
+} catch (error) {
+  if (error instanceof ProgramError) {
+    for (const diagnostic of error.diagnostics) {
+      console.error({
+        message: diagnostic.message,
+        line: diagnostic.line,
+        beat: diagnostic.beat,
+      });
+    }
+  } else {
+    throw error;
+  }
+}
+~~~
+
+`Diagnostic` has a `message: string`, an optional 1-based source `line`, and an optional zero-based `beat` index. Not every failure has both locations. The error's `message` aggregates diagnostics and prefixes known positions with `Line N:` or `Step N:`.
+
+## Frequent authoring failures
+
+| Failure | Cause | Resolution |
+| --- | --- | --- |
+| Expected header | Missing or incorrect `thl <domain>` header, or extra header options | Use exactly one supported domain |
+| Unknown statement | Unsupported syntax inside `flow` or a computed domain | Follow that domain's grammar |
+| Duplicate or unknown id | Repeated node/link ids, missing link endpoints, missing variables | Declare first and use unique stable ids |
+| Invalid target | Unsupported path syntax or forbidden object key | Use `entity`, `arr[0]`, or `config.mode` |
+| Invalid value | Unquoted string, non-JSON literal, non-finite number, cyclic JS data | Use finite JSON, no executable expressions |
+| Conflicting writes | Two writes affect the same target or overlapping parent/child target in one beat | Separate into distinct steps |
+| Conflicting visibility | Both `show` and `hide`, or multiple visibility writes, target the same node/link in one beat | Use one visibility operation |
+| Invalid transfer | Sending on a hidden link or one connected to a hidden node | Show link and endpoints before / during the same beat |
+| Invalid array path | Index exceeds the array length or nested path is not addressable | Replace an existing element or append exactly once |
+
+## Fixed compilation ceilings
+
+These values are exported as `COMPILATION_LIMITS`:
+
+| Limit | Value |
+| --- | ---: |
+| Source length (UTF-16 code units) | **262,144** |
+| Entities | **200** |
+| Relations | **1,000** |
+| Steps | **2,000** |
+| Events, total across steps | **10,000** |
+| Program budget | **1,000,000 units** |
+| Expanded trace budget | **8,000,000 units** |
+
+The budgets measure deterministic structural work and JSON-like payloads; they are **not** exact heap-byte or wall-clock limits. Input nesting and cycles are also checked, and compiled values must be finite JSON-like data.
+
+The computed domains enforce tighter, domain-specific input limits:
+
+| Domain | Limit |
+| --- | --- |
+| `bindings` | Restricted assignments and array `push`; maximum 2,000 statements/steps, subject to engine bounds |
+| `binary` | Two unsigned operands of 1–16 bits each |
+| `matrix` | Finite rectangular inputs, each dimension from 1 to 4; compatible inner dimensions |
+| `callstack` | `fact n`, integer n from 1 through 6 |
+| `flow` | Global engine caps |
+
+## Validation lifecycle
+
+1. `parseThl` limits the source and identifies a single block.
+2. Domain parsing checks the domain-specific grammar and parameters.
+3. `validateProgram` checks the program model, ids, references, events, JSON shapes, and static bounds.
+4. `compileProgram` applies steps and converts invalid dynamic writes or hidden transfers into `ProgramError`.
+5. The compiler charges the expanded trace budget while producing complete frame snapshots.
+
+On failure, no partial `Trace` is returned. Treat errors as authoring diagnostics and avoid silently dropping invalid steps from educational content.
+
+## Security and operational considerations
+
+Throughline does not execute authored JavaScript, use `eval`, fetch URLs, authenticate learners, or send telemetry. It renders author strings as text in its built-in player. These boundaries do not eliminate the host application's responsibility to validate source origins, enforce upload limits, or protect any surrounding Markdown renderer from unsafe HTML.
+
+For a public, untrusted editor, keep compilation failure isolated from the rest of the UI, cap submission frequency, and consider running compilation in an appropriate worker or background execution context for your own runtime. The library itself does not spawn workers or enforce network-level rate limits.
+

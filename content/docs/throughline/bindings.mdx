@@ -1,0 +1,92 @@
+---
+title: Bindings and references
+description: Explain primitive assignments, heap references, shared mutations, and rebinding with the bindings domain.
+---
+
+The `bindings` domain visualizes a **small, intentionally restricted assignment language**. It shows variable slots in a **Stack** lane and arrays/objects in a **Heap** lane. Use it to explain the difference between copying a primitive and copying a reference.
+
+It is not a JavaScript interpreter: it supports only declarations, assignments, and array `push`. Expressions, property access, branching, and arbitrary method calls are not supported.
+
+## Example: two names, one array
+
+~~~md
+```thl bindings
+let list = [1, 2]
+let alias = list
+alias.push(3)
+alias = [7]
+```
+~~~
+
+This produces four authored beats plus the initial frame:
+
+1. `list` receives a reference to the first heap array, `o1`.
+2. `alias` receives **the same reference**; the array is not cloned.
+3. `alias.push(3)` mutates `o1`. Both `list` and `alias` still refer to the changed array.
+4. `alias = [7]` creates a new heap object, `o2`, and moves only the `alias` reference. `list` still points to `o1`.
+
+Heap nodes and reference edges are predeclared hidden and revealed as needed. Previous references are hidden when rebinding changes the pointer, but old objects remain available for other aliases.
+
+## Accepted statements
+
+| Statement | Description |
+| --- | --- |
+| `let name = <json>` | Declare a variable with a JSON literal |
+| `const name = <json>` | Same visualization as `let`; const restrictions are **not** enforced |
+| `let name = existing` | Declare a new variable copying an existing primitive or reference |
+| `const name = existing` | Same copying semantics; const restrictions are not enforced |
+| `name = <json>` | Reassign a previously declared variable |
+| `name = existing` | Copy an existing variable into a previously declared variable |
+| `name.push(value1, value2)` | Append JSON values to an array referenced by the variable |
+
+Use one statement per source line. Blank lines and whole-line `#` comments are ignored; each non-comment statement becomes exactly **one beat**.
+
+Right-hand-side literals must be valid JSON. Strings require double quotes. A bare identifier refers to a previously declared variable.
+
+### Primitive copy
+
+~~~md
+```thl bindings
+let a = 5
+let b = a
+b = 9
+```
+~~~
+
+Each primitive occupies its own variable slot. Assigning `b` does not mutate `a`.
+
+### Object reference copy
+
+~~~md
+```thl bindings
+const configuration = {"ready":true}
+let other = configuration
+other = {"ready":false}
+```
+~~~
+
+Objects, like arrays, are allocated in the heap and copied by reference. This domain does not support changing object properties; rebinding to a new object **is** supported.
+
+### Push to a shared array
+
+~~~md
+```thl bindings
+let a = []
+let b = a
+b.push(1, 2, 3)
+```
+~~~
+
+The array receives three appended values. The visualization focuses the object and other names sharing that object.
+
+## Boundaries and common mistakes
+
+- A variable must be declared before use; duplicate declarations fail.
+- A `push` receiver must be a variable currently holding an array reference. Pushing to a primitive or object fails.
+- Bracket indexing (`a[0]`), object property assignment (`a.x = 2`), `pop`, arithmetic, functions, and JavaScript expressions are not supported.
+- `const` is syntax for declaration only. Do **not** teach this domain as an accurate JavaScript const-enforcement simulator.
+- Future nodes may exist in a trace while hidden. They are not visible current state.
+- The general [compiler event, size, and work limits](/docs/throughline/errors-and-limits) still apply.
+
+For fully hand-authored custom pointer changes, use [`flow`](/docs/throughline/flow) instead.
+

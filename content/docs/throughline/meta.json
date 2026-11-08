@@ -1,6 +1,23 @@
 {
-	"title": "Throughline",
-	"description": "Interactive step-player for complex systems",
-	"root": true,
-	"icon": "Play"
+  "title": "Throughline",
+  "description": "Deterministic, Markdown-authored state traces",
+  "root": true,
+  "icon": "Play",
+  "pages": [
+    "index",
+    "getting-started",
+    "concepts",
+    "---Authoring traces---",
+    "flow",
+    "bindings",
+    "binary",
+    "matrix",
+    "callstack",
+    "---Using the package---",
+    "react-player",
+    "programmatic-api",
+    "integrations",
+    "errors-and-limits",
+    "recipes"
+  ]
 }

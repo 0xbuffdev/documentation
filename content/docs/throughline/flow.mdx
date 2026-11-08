@@ -1,0 +1,126 @@
+---
+title: Flow authoring
+description: Complete reference for the thl flow language, events, JSON values, targets, groups, and visibility.
+---
+
+`flow` is the hand-authored domain. Use it when the explanation is a sequence of explicit state changes rather than a built-in computation.
+
+## Complete example
+
+~~~md
+```thl flow
+# Declarations come before the first step.
+group "System" as row
+node request "Request" in "System" = "new"
+node worker "Worker" in "System" as record = {"status":"idle"}
+node output "Response" in "System" hidden = null
+link dispatch request -> worker "dispatch"
+link reply worker -> output "reply" hidden
+
+step "Dispatch"
+  send dispatch = "new"
+  set worker.status = "busy"
+  focus request, worker
+  note "The worker accepts the request."
+
+step "Complete"
+  show node output
+  show link reply
+  set worker.status = "idle"
+  set output = "done"
+  send reply = "done"
+  focus output
+  note "The result is now visible."
+```
+~~~
+
+This is a narrated model, not an HTTP client or execution simulator.
+
+## Header and fences
+
+Use exactly `thl flow` in a Markdown fence info string, or pass a bare `thl flow` header directly to `compile()`. Both backtick and tilde fences are accepted. Extra header options are not supported. A single call accepts **one** block; surrounding prose must be handled by the Markdown host.
+
+Blank lines and full lines beginning with `#` are ignored.
+
+## Declaration syntax
+
+| Syntax | Effect |
+| --- | --- |
+| `group "<name>" as <layout>` | Specify row, column, or tree layout for a named lane |
+| `node <id> "<label>" [in "<lane>"] [as <view>] [hidden] [= <json>]` | Declare a state-holding entity |
+| `link <id> <from> -> <to> ["<label>"] [hidden]` | Declare a directed relation |
+| `step "<label>"` | Start a named step |
+
+The optional node modifiers must appear in the order shown: lane, view, `hidden`, initial value. If the value is omitted, the node starts with `null`. Group names and labels are JSON-quoted strings. Entity and link ids start with an ASCII letter and can then contain letters, digits, underscore, and hyphen.
+
+All groups, nodes, and links must be declared **before** the first step. Every event must belong to a step. Relations must reference existing entities, so declare their endpoints before the link.
+
+### Views
+
+Supported view names are `auto`, `text`, `number`, `array`, `stack`, `matrix`, `bits`, and `record`. These change how the player presents values. They do not change the stored JSON value or authorize additional operations.
+
+### Lanes and layout
+
+Nodes in the same `in "<lane>"` lane can be arranged via a matching `group "<lane>" as row|column|tree` declaration. Without an explicit layout, the default is a row. Use `tree` to arrange related nodes hierarchically and `column` for vertical groups.
+
+## Step events
+
+| Syntax | Meaning |
+| --- | --- |
+| `set target = <json>` | Write a new value |
+| `focus targetA, targetB` | Highlight one or more targets; spaces also separate items |
+| `send linkId = <json>` | Add a transfer with payload; the payload is optional |
+| `note "<text>"` | Add explanatory text |
+| `show node id` / `hide node id` | Toggle an entity's visibility |
+| `show link id` / `hide link id` | Toggle a relation's visibility |
+
+For an intentionally empty focus, a bare `focus` is permitted. Notes are text; they are not interpreted as HTML.
+
+### Targets
+
+An event can target a whole entity (`items`) or a nested position (`items[0]`, `grid[1][2]`, `config.status`). Nested record keys use dot notation and must be identifier-like; numeric array indices use brackets. The paths `__proto__`, `constructor`, and `prototype` are rejected.
+
+~~~md
+```thl flow
+node items "Items" as array = [10,20]
+node config "Config" as record = {"mode":"off"}
+
+step "Edit"
+  set items[1] = 25
+  set config.mode = "on"
+  focus items[1], config.mode
+```
+~~~
+
+For `set`, the target must exist and the path must be valid: arrays can replace an existing element or append at **exactly** the current length; records can add keys. Out-of-range indices and indexing into a non-container are errors. `focus` requires a known entity, but a nested position that cannot be shown does not fail compilation.
+
+Values must be valid finite JSON: `null`, booleans, numbers, strings, arrays, and plain objects. Strings and labels must be quoted. Computed expressions are not parsed in `flow`; calculate the value yourself and write the result.
+
+## Persistent visibility
+
+A node or link can start `hidden`. The object still exists in the trace and keeps its stable identity and value. `show` and `hide` change visibility in later frames. The renderer suppresses a link whenever either endpoint is hidden.
+
+~~~md
+```thl flow
+node caller "Caller" = "ready"
+node callee "Callee" hidden = "waiting"
+link call caller -> callee hidden
+step "Start call"
+  show node callee
+  show link call
+  send call = "invoke"
+```
+~~~
+
+A transfer along a hidden link or with a hidden endpoint is invalid. You may show the endpoints and link in the **same step** as a `send`, because the step's visibility writes are applied together. Conflicting visibility operations for one object inside a step are rejected.
+
+## Authoring rules that improve clarity
+
+- Make each step communicate **one idea**. Split "read", "compute", and "write" when you want learners to observe the intermediate states.
+- `send` only annotates movement; pair it with a separate `set` if you want the recipient to hold new state.
+- Use `focus` for attention and `note` for explanation, instead of relying on color or arrows alone.
+- Predeclare future entities with `hidden`, then reveal them; do not introduce declarations after a step.
+- Never write both `set items = ...` and `set items[0] = ...` in one step. Their targets overlap.
+
+For validation failures and hard ceilings, see [Errors and limits](/docs/throughline/errors-and-limits). For examples that use all these constructs, see [Recipes](/docs/throughline/recipes).
+

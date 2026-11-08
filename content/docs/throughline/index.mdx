@@ -1,7 +1,88 @@
 ---
 title: Throughline
-description: Turns trace blocks authored in markdown into interactive step-player scenes to inspect execution flows.
+description: Author readable state transitions in Markdown, compile deterministic snapshots, and optionally play them in React.
 icon: Play
 ---
 
-Documentation for Throughline is coming soon. Check back later for guides, references, and interactive demos.
+Throughline is a small TypeScript library for explaining **how state changes over time**. Write named steps in a `thl` block, compile them into a predictable sequence of snapshots, and—if you use React—show those snapshots in an accessible, interactive player.
+
+It is suited to educational diagrams, algorithms, reference semantics, recursion, binary arithmetic, matrix multiplication, protocols, and workflow walkthroughs. It is **not** an interpreter for arbitrary code, an automatic tracer of a running program, or a video renderer.
+
+## Start here
+
+1. [Install and run your first trace](/docs/throughline/getting-started) — minimal compiler and React examples.
+2. [Understand programs, steps, and frames](/docs/throughline/concepts) — the underlying data model and execution model.
+3. [Author a flow trace](/docs/throughline/flow) — nodes, links, writes, focus, transfers, and visibility.
+4. [Integrate into an application](/docs/throughline/integrations) — Markdown extraction, build-time validation, and safe rendering.
+
+## The smallest useful trace
+
+The following `flow` trace describes a counter that changes from zero to one:
+
+~~~md
+```thl flow
+node counter "Counter" = 0
+step "Increment"
+  set counter = 1
+  focus counter
+  note "The counter now holds one."
+```
+~~~
+
+~~~ts
+import { compile } from "@0xbuff/throughline";
+
+const source = [
+  "```thl flow",
+  'node counter "Counter" = 0',
+  'step "Increment"',
+  '  set counter = 1',
+  '  focus counter',
+  '  note "The counter now holds one."',
+  "```",
+].join("\n");
+
+const trace = compile(source);
+
+console.log(trace.version); // 1 — schema, not npm release
+console.log(trace.frames.length); // 2 — initial state + one step
+console.log(trace.frames[1].state.entities[0].value); // 1
+~~~
+
+Compilation produces all snapshots up front; moving backward or forward through frames does **not** rerun the source.
+
+## Choose a domain
+
+| Domain | Use it when you need to explain | Input |
+| --- | --- | --- |
+| [`flow`](/docs/throughline/flow) | State, data movement, systems, protocols, and workflows | Explicit nodes, links, and named steps |
+| [`bindings`](/docs/throughline/bindings) | Variables, copies, object references, mutations, and rebinding | A restricted assignment and array-push language |
+| [`binary`](/docs/throughline/binary) | Unsigned addition and carry propagation | Two binary operands |
+| [`matrix`](/docs/throughline/matrix) | Matrix multiplication, cell by cell | Two compatible numeric grids |
+| [`callstack`](/docs/throughline/callstack) | Factorial recursion, calls, and returns | One bounded factorial argument |
+
+The computed domains generate the same trace model as hand-authored `flow`; they do not execute general-purpose source code.
+
+## Ways to use Throughline
+
+- **Compiler only:** import `@0xbuff/throughline` in Node.js 24+ or a compatible ESM environment. React is not needed.
+- **React player:** render a compiled `Trace` with `@0xbuff/throughline/react` and opt-in stylesheet `@0xbuff/throughline/styles/throughline.css`.
+- **Programmatic authoring:** construct a `Program` or use `tracer()` to narrate a deterministic computation in TypeScript.
+- **Examples:** import the read-only sample set from `@0xbuff/throughline/examples`.
+
+Only these four import paths are part of the supported package surface. [API reference](/docs/throughline/programmatic-api) · [React player](/docs/throughline/react-player) · [Recipes](/docs/throughline/recipes)
+
+## Release and compatibility
+
+These pages describe **`@0xbuff/throughline@0.0.2`**, released on November 8, 2026. `Program.version` and `Trace.version` are both **`1`** and are independent of the npm package version. The package is ESM-only, includes TypeScript declarations, targets Node.js 24 or newer, and uses optional React 19 peers.
+
+- [npm package](https://www.npmjs.com/package/@0xbuff/throughline)
+- [Source at the v0.0.2 tag](https://github.com/0xbuffdev/throughline/tree/v0.0.2)
+- [Changelog](https://github.com/0xbuffdev/throughline/blob/v0.0.2/CHANGELOG.md)
+- [Issues and feature requests](https://github.com/0xbuffdev/throughline/issues)
+- [License (Apache-2.0)](https://github.com/0xbuffdev/throughline/blob/v0.0.2/LICENSE)
+
+<Callout type="info">
+  Throughline works without an account, remote service, or network requests at compilation time. The optional React player renders local, precompiled state; no telemetry or learning records are built into the library.
+</Callout>
+

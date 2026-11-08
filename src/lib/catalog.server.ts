@@ -2,16 +2,11 @@ import {
 	ProductSchema,
 	sectionManifestSchema,
 	TopManifestSchema,
-	type Product,
 } from "@0xbuff/content-contract";
 import type { RouterContextProvider } from "react-router";
 import { cloudflareContext } from "./cloudflare-context";
 import { source } from "./source";
-
-export type DocumentedProduct = Pick<
-	Product,
-	"slug" | "pid" | "name" | "status" | "description"
-> & { tagline: string };
+import { selectDocumentedProducts } from "./published-products";
 
 const MANIFEST_TTL = 60;
 
@@ -65,7 +60,7 @@ async function readManifest(
 
 export async function getDocumentedProducts(
 	context: RouterContextProvider,
-): Promise<DocumentedProduct[]> {
+): Promise<ReturnType<typeof selectDocumentedProducts>> {
 	const { env, ctx } = context.get(cloudflareContext);
 	const bucket = (env as Env & { CONTENT?: R2Bucket }).CONTENT;
 	if (!bucket) {
@@ -90,30 +85,5 @@ export async function getDocumentedProducts(
 		throw new Error("[documentation] product manifest count mismatch");
 	}
 
-	const pids = new Set<string>();
-	const slugs = new Set<string>();
-	for (const item of manifest.items) {
-		if (pids.has(item.pid) || slugs.has(item.slug)) {
-			throw new Error("[documentation] duplicate product identifiers in R2");
-		}
-		pids.add(item.pid);
-		slugs.add(item.slug);
-	}
-
-	return manifest.items
-		.filter(
-			(item) =>
-				!item.url &&
-				/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.slug) &&
-				source.getPage([item.slug]) != null,
-		)
-		.map(({ slug, pid, name, status, kicker, description }) => ({
-			slug,
-			pid,
-			name,
-			status,
-			tagline: kicker,
-			description,
-		}))
-		.sort((a, b) => a.pid.localeCompare(b.pid));
+	return selectDocumentedProducts(manifest.items, (slug) => source.getPage([slug]) != null);
 }

@@ -1,3 +1,8 @@
 {
-	"pages": ["throughline"]
+  "title": "Documentation",
+  "description": "User guides and API references for 0xBUFF products.",
+  "pages": [
+    "throughline",
+    "..."
+  ]
 }

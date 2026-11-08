@@ -60,15 +60,18 @@ pnpm build:staging
 
 With the Cloudflare Vite plugin, `wrangler deploy` uses the generated deployment config; `wrangler deploy --env staging` **must not** be used after the build.
 
-The existing branch-to-environment workflow is retained:
+Code merges do **not** deploy to Cloudflare. The deployment workflow follows 0xNAND's explicit release boundary:
 
-- Push to `staging`: validate, build with `CLOUDFLARE_ENV=staging`, verify bindings, deploy the staging Worker and smoke-test it.
-- Push to `main`: validate, build with the top-level production configuration, verify bindings, deploy and smoke-test production.
-- Pull requests: install private contract with short-lived token; typecheck, test, build and report asset sizes without deploying.
+1. Merge the reviewed and signed code into `main` after CI passes. This alone does not deploy either environment.
+2. Set up GitHub Environments named `staging` and `production`. Verify each environment's R2 content, domain, credentials, and Worker secrets. Set environment variable `DOCS_RELEASE_READY=true` **only after** verifying that environment.
+3. Run **Actions → Deploy Documentation → Run workflow** from the `main` branch, choose `staging`, and enter `DEPLOY_STAGING`. The workflow checks readiness, builds the staging environment, confirms the generated binding, deploys, and probes the live endpoints.
+4. Once staging is verified, dispatch the same workflow from `main` targeting `production` with `DEPLOY_PRODUCTION` and a separately verified production environment (`DOCS_RELEASE_READY=true`).
+
+Pull requests continue to typecheck, test, build **both** target configurations, verify the generated R2 bindings and report client asset sizes without deploying.
 
 Cloudflare deployment requires repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` with the minimum permissions for Workers and the configured custom domains. Newsletter `RESEND_API_KEY` is a **Worker secret**, set independently for the production and staging Workers. The staging `RESEND_SEGMENT_ID` is intentionally empty to prevent accidental subscriptions to the production audience; configure a separate staging segment before testing signup delivery.
 
-Before either deployment, independently confirm the relevant R2 bucket exists, contains a valid `manifest.json` and `products/manifest.json`, is accessible to that Worker's `CONTENT` binding, and that Cloudflare domains and credentials are provisioned. CI cannot create or verify those Cloudflare resources by reading the repository. The deployment smoke tests request the homepage and `/docs` to check real R2 access, plus the LLM, robots, sitemap and subscription routes.
+Before either deployment, independently confirm the relevant R2 bucket exists, contains a valid `manifest.json` and `products/manifest.json`, is accessible to that Worker's `CONTENT` binding, and that Cloudflare domains and credentials are provisioned. CI cannot create or verify those Cloudflare resources by reading the repository. The deployment smoke tests request the homepage and `/docs` to check real R2 access, plus the LLM, search, robots, sitemap and subscription routes. Staging serves `robots.txt` with `Disallow: /` and sets `X-Robots-Tag: noindex, nofollow, noarchive` on Worker responses.
 
 ## Bundle strategy
 

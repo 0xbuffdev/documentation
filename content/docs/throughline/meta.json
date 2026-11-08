@@ -1,6 +1,6 @@
 {
   "title": "Throughline",
-  "description": "Author, visualize, style, and integrate deterministic state traces.",
+  "description": "Markdown-authored deterministic state traces",
   "root": true,
   "icon": "Play",
   "pages": [

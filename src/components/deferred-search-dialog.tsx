@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentProps } from "react";
 
-type SearchDialogProps = React.ComponentProps<
+type SearchDialogProps = ComponentProps<
 	typeof import("fumadocs-ui/components/dialog/search-default")["default"]
 >;
 

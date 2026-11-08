@@ -14,7 +14,9 @@ concurrency:
   group: deploy-${{ github.ref_name }}
   cancel-in-progress: true
 
-permissions: {}
+permissions:
+  contents: read
+  packages: read
 
 env:
   # CLOUDFLARE_API_TOKEN needs:
@@ -35,7 +37,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 11.2.2
 
       - uses: actions/setup-node@v4
         with:
@@ -44,9 +46,22 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        run: pnpm build
+        run: |
+          if [ "${{ github.ref_name }}" = "staging" ]; then
+            pnpm build:staging
+          else
+            pnpm build
+          fi
+
+      - name: Verify generated deployment bindings
+        run: node scripts/check-deploy-config.mjs "${{ github.ref_name == 'staging' && 'staging' || 'production' }}"
+
+      - name: Report client bundle sizes
+        run: pnpm bundle:report
 
       - name: Typecheck
         run: pnpm typecheck
@@ -54,21 +69,11 @@ jobs:
       - name: Tests
         run: pnpm test
 
-      # The vite plugin emits a redirected deploy config that ignores
-      # `wrangler --env` overrides, so staging gets its own derived config
-      # (scripts/stage-deploy.mjs): service 0xbuff-docs-staging on
-      # staging.docs.0xbuff.com, same worker bundle and bindings.
-      #
-      # Worker secrets are not passed through CI: set them once per
-      # environment from an authenticated shell, never in the repo.
-      #   production: pnpm exec wrangler secret put RESEND_API_KEY
-      #   staging:    pnpm exec wrangler secret put RESEND_API_KEY -c build/server/wrangler.staging.json
-      - name: Deploy staging
+      # The Vite plugin selects the Wrangler environment at build time.\n      # Deploy only the generated config; do not pass Wrangler --env.\n      - name: Deploy staging
         id: deploy-staging
         if: github.ref_name == 'staging'
         run: |
-          node scripts/stage-deploy.mjs
-          pnpm exec wrangler deploy -c build/server/wrangler.staging.json
+          pnpm exec wrangler deploy
 
       - name: Deploy production
         id: deploy-production
@@ -89,7 +94,7 @@ jobs:
               echo "no smoke target for $REF" && exit 0
               ;;
           esac
-          curl -fsS "$URL/llms.txt" | head -n 4
+          # Homepage and /docs require the environment-specific R2 products manifest.\n          curl -fsS "$URL/" >/dev/null\n          curl -fsS -L "$URL/docs" >/dev/null\n          curl -fsS "$URL/llms.txt" | head -n 4
           curl -fsS "$URL/llms-full.txt" | head -n 4
           curl -fsS "$URL/robots.txt" | head -n 2
           echo "sitemap routes:"

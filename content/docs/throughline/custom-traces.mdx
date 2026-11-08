@@ -1,0 +1,193 @@
+---
+title: Custom traces with TypeScript
+description: Use the public tracer API to visualize your own algorithms, state machines, and data flows without adding a Throughline domain.
+---
+
+The five built-in `thl` domains cover common teaching scenarios. For any other algorithm or workflow, use **`tracer()`** to construct a Program from ordinary TypeScript, then compile it into a Trace. This is a **public consumer API**: you do not need to modify Throughline, add package source files, or register anything.
+
+Choose this approach when your product already knows the values and you want to decide which intermediate steps learners should see. Throughline does **not** instrument or execute arbitrary JavaScript statements from a `thl` fence.
+
+## 1. Record a custom algorithm
+
+The example below traces a linear search. It records a frame every time an array position is inspected.
+
+~~~ts
+import { compileProgram, tracer } from "@0xbuff/throughline";
+
+function visualizeSearch(values: number[], target: number) {
+  const t = tracer()
+    .group("Search", "row")
+    .node("items", "Items", values, { lane: "Search", view: "array" })
+    .node("found", "Found at", -1, { lane: "Search", view: "number" });
+
+  for (let index = 0; index < values.length; index++) {
+    const isMatch = values[index] === target;
+
+    t.step(`Check position ${index}`, (step) => {
+      step.focus(`items[${index}]`);
+      if (isMatch) {
+        step.set("found", index);
+        step.focus("found");
+        step.note(`Found ${target} at index ${index}.`);
+      } else {
+        step.note(`${values[index]} does not match ${target}.`);
+      }
+    });
+
+    if (isMatch) break;
+  }
+
+  return compileProgram(t.program());
+}
+
+const trace = visualizeSearch([4, 7, 2], 7);
+console.log(trace.frames.length); // 3: initial + two comparisons
+console.log(trace.frames.at(-1)?.state.entities.find((e) => e.id === "found")?.value); // 1
+~~~
+
+The `step` callback is **synchronous** and represents exactly one recorded beat. The algorithm itself runs in your application; Throughline stores the values, focus, explanations, and state transitions that you record.
+
+Inputs must be representable as finite JSON. The compiler enforces a maximum of 200 entities, 1,000 relations, 2,000 steps, 10,000 events, and deterministic payload limits. Validate and bound user-provided arrays before running loops that generate traces.
+
+## 2. Read state between completed steps
+
+Use `tracer.get(target)` to retrieve the current value from the last **completed** step. It returns a detached copy (or `undefined` for an unaddressable target).
+
+~~~ts
+import { compileProgram, tracer } from "@0xbuff/throughline";
+
+const t = tracer().node("count", "Count", 0);
+
+for (let i = 0; i < 3; i++) {
+  const previous = t.get("count") as number;
+  t.step(`Increment to ${previous + 1}`, (step) => {
+    step.set("count", previous + 1);
+    step.note("Increment the counter by one.");
+  });
+}
+
+const trace = compileProgram(t.program());
+console.log(trace.frames.at(-1)?.state.entities[0].value); // 3
+~~~
+
+Do **not** read `t.get()` inside the callback expecting earlier writes from that same step to be visible. The live recording is updated after the callback completes; use a new step if learners need to observe an intermediate state. The builder copies incoming JSON data, so later mutation of your own objects cannot retroactively change previously recorded frames.
+
+## 3. Model transfers between components
+
+Relationships are declared once. A `send` event annotates data moving along a relationship, while `set` makes a persistent state change.
+
+~~~ts
+import { compileProgram, tracer } from "@0xbuff/throughline";
+
+const t = tracer()
+  .group("Pipeline", "row")
+  .node("source", "Source", "ready", { lane: "Pipeline" })
+  .node("destination", "Destination", null, { lane: "Pipeline" })
+  .link("transfer", "source", "destination", "message");
+
+t.step("Send request", (step) => {
+  step.send("transfer", "ready");
+  step.focus("source", "destination");
+  step.note("The request is being sent.");
+});
+
+t.step("Apply request", (step) => {
+  step.set("destination", "ready");
+  step.focus("destination");
+  step.note("The destination has received the value.");
+});
+
+const trace = compileProgram(t.program());
+~~~
+
+This models a stateful explanation of a workflow; it does **not** send a network request. A real product can run its workflow separately and build an educational trace from the results.
+
+## 4. Reveal or hide existing structure
+
+Use hidden entities and links when the scene's topology changes as a lesson progresses. They must be declared before the first step.
+
+~~~ts
+import { compileProgram, tracer } from "@0xbuff/throughline";
+
+const t = tracer()
+  .node("current", "Current", 1)
+  .node("replacement", "Replacement", 2, { hidden: true })
+  .link("replace", "current", "replacement", "replaces", { hidden: true });
+
+t.step("Prepare", (step) => {
+  step.show("node", "replacement");
+  step.show("link", "replace");
+  step.send("replace", 2);
+});
+
+t.step("Commit", (step) => {
+  step.hide("node", "current");
+  step.hide("link", "replace");
+  step.focus("replacement");
+});
+
+const trace = compileProgram(t.program());
+~~~
+
+Hidden nodes still exist in the snapshots. A hidden link or link with a hidden endpoint cannot be used by `send` until visible; showing it and sending within the same step is allowed. Earlier snapshots remain unchanged and accessible for seeking.
+
+## 5. Construct a Program directly
+
+If you generate data elsewhere, you can create the public `Program` structure without `tracer()`:
+
+~~~ts
+import { compileProgram, type Program } from "@0xbuff/throughline";
+
+const program: Program = {
+  version: 1,
+  entities: [{ id: "state", label: "State", value: "idle" }],
+  relations: [],
+  beats: [
+    {
+      label: "Begin",
+      events: [
+        { op: "set", target: "state", value: "running" },
+        { op: "note", text: "The operation has started." },
+      ],
+    },
+  ],
+};
+
+const trace = compileProgram(program);
+~~~
+
+`compileProgram` validates the model, identifiers, references, events, JSON values, overlapping writes, and resource limits. This is useful for server-side content builds, algorithms written in other languages that output compatible JSON, or apps that already store the trace's intermediate events.
+
+## 6. Display the result in your product
+
+The result of either `compileProgram(t.program())` or `compile(source)` is the **same public Trace type**. In React 19, render it directly:
+
+~~~tsx
+import type { Trace } from "@0xbuff/throughline";
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+import "@0xbuff/throughline/styles/throughline.css";
+
+export function LessonTrace({ trace }: { trace: Trace }) {
+  return <ThroughlinePlayer trace={trace} theme="auto" />;
+}
+~~~
+
+A Node build can write `JSON.stringify(trace)` to a file and deliver it to the frontend; use `trace.version === 1` for compatibility and verify the data's trusted origin. The official player is React-specific; non-React consumers can read `trace.frames` and build their own display.
+
+## 7. Custom input formats in your app
+
+You can write **your own input parser** and translate the result into `tracer()` calls or a version-1 Program. This lets your product accept forms, JSON, custom Markdown blocks, or lesson data while remaining on the supported Throughline API.
+
+There is **no public runtime API** to register an additional `thl mydomain` with `compile()` in v0.0.2. If your app defines custom syntax, parse it in your app, generate a Program, and use `compileProgram()` to produce a Trace.
+
+## Common mistakes
+
+- **Async callbacks:** `t.step("...", async (step) => { ... })` is rejected. Fetch or compute data *before* creating the step.
+- **Declarations during a step:** define nodes, groups, and links before recording begins.
+- **Overlapping writes:** do not set both `items` and `items[0]` in the same step.
+- **Nested recording:** do not call `t.step()` inside another `t.step()` callback.
+- **Missing mutations:** `send` adds a transfer annotation; only `set` changes node values.
+- **Unexpected replays:** do not compile the same source on every React render; memoize or precompile the Trace.
+
+See [Complete types and exports](/docs/throughline/type-reference) for all `Tracer` and `StepApi` method signatures, [Recipes](/docs/throughline/recipes) for worked examples, and [Errors and limits](/docs/throughline/errors-and-limits) for validation details.
+

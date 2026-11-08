@@ -1,0 +1,109 @@
+---
+title: Compatibility and upgrading
+description: Use the right runtime versions, interpret trace schema versions, upgrade safely, and troubleshoot compatibility.
+---
+
+These guides describe **`@0xbuff/throughline@0.0.2`**, published November 8, 2026. This page helps applications choose a compatible environment and upgrade without changing trace behavior unexpectedly.
+
+## Installation and requirements
+
+~~~sh
+npm install @0xbuff/throughline@0.0.2
+~~~
+
+For the optional React player:
+
+~~~sh
+npm install react@^19 react-dom@^19
+~~~
+
+| Requirement | v0.0.2 support |
+| --- | --- |
+| Node.js | **24 or newer** for Node-hosted tooling |
+| JavaScript module format | ESM; there is no CommonJS `require()` export |
+| TypeScript | Type declarations are included; no separate `@types` package |
+| React | React 19 peer dependency, only if using the player |
+| React DOM | React DOM 19 peer dependency, only if using the player |
+| CSS | Import the player CSS explicitly from the package export |
+| Remote service | None required to compile or play traces |
+
+Core compilation works independently of React and DOM APIs. For a framework-specific setup, see [Other products and frameworks](/docs/throughline/frameworks).
+
+## The four supported imports
+
+~~~ts
+import { compile, tracer, compileProgram } from "@0xbuff/throughline";
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+import { EXAMPLES } from "@0xbuff/throughline/examples";
+import "@0xbuff/throughline/styles/throughline.css";
+~~~
+
+Only the first import is required for a compiler-only application. Other paths are public optional features. Deep imports into the published `src` or `dist` directories are unsupported.
+
+## Package version versus data schema
+
+| Version | v0.0.2 value | Interpretation |
+| --- | --- | --- |
+| npm package | `0.0.2` | Installation and behavioral compatibility |
+| `Program.version` | `1` | Input Program schema |
+| `Trace.version` | `1` | Compiled snapshot schema |
+
+The package version and data schema versions are independent. A package update can alter controls, layout, or CSS behavior without changing the Trace schema number. The project is pre-1.0, so pin exact versions when you need reproducible learning materials.
+
+### Persisted trace data
+
+~~~ts
+import type { Trace } from "@0xbuff/throughline";
+
+function readTrace(data: unknown): Trace {
+  if (
+    data === null ||
+    typeof data !== "object" ||
+    !("version" in data) ||
+    data.version !== 1 ||
+    !("frames" in data) ||
+    !Array.isArray(data.frames)
+  ) {
+    throw new Error("Unsupported or malformed trace format");
+  }
+
+  // This is only a minimal compatibility check, not full schema validation.
+  // Verify trust and shape at the host boundary before passing data to a player.
+  return data as Trace;
+}
+~~~
+
+This example checks the schema version and the existence of frames. It does **not** validate nested frame structures; treat remote or user-provided JSON as untrusted and validate it with your own schema before rendering. There is no published `validateTrace` export in v0.0.2. The safest path for editable content is to store the source and recompile it with the current version.
+
+## Upgrade checklist for an application
+
+1. Pin the desired version in `package.json` and commit the lockfile.
+2. Confirm your build/runtime meets the Node engine requirement.
+3. Run a compilation test for every shipped `thl` example.
+4. Compare important frame counts, labels, final values, and captions against your expected lessons.
+5. If using React, verify compatible peer versions, accessible controls, mobile layout, SSR, and styling.
+6. Review any overrides of `.thl` implementation selectors and the ten CSS variables.
+7. Check compatibility of saved Trace documents before feeding them to the player.
+
+Use [Errors and limits](/docs/throughline/errors-and-limits) to diagnose source errors after upgrading.
+
+## Changes from v0.0.1 to v0.0.2
+
+The initial `0.0.1` release introduced the five trace domains, deterministic Trace/Program schema 1, and optional React player. The `0.0.2` release refined package documentation and metadata; it did **not** introduce a sixth domain or a new public player prop. The compilation grammar and schema described across these pages apply to v0.0.2.
+
+## Common compatibility problems
+
+| Symptom | Cause | Resolution |
+| --- | --- | --- |
+| Engine error during installation | Node 22 or older used for a Node-hosted app | Upgrade Node to 24+ |
+| `require()` import fails | Package is ESM-only | Use ESM `import` syntax |
+| React peer warnings | App uses incompatible React versions | Use supported React/React DOM 19 peers |
+| Unstyled visualization | Player stylesheet not imported | Import `@0xbuff/throughline/styles/throughline.css` once |
+| CSS override has no effect | Variables placed on an ancestor instead of `.thl` | Target the player root; see [CSS and theming](/docs/throughline/styling) |
+| Trace playback restarts on parent render | Passing a freshly compiled Trace each time | Keep a stable Trace object or use `useMemo` |
+| Old JSON trace behaves unexpectedly | Persisted schema shape or package behavior differs | Recompile original source with the current package where possible |
+
+## License and support for users
+
+Throughline is licensed under **Apache-2.0**. The npm distribution includes the license text; when redistributing the software, comply with the applicable license and notice requirements. For bugs, use the public [issue tracker](https://github.com/0xbuffdev/throughline/issues). Use the guides here for installation, APIs, authoring, styling, and integration.
+

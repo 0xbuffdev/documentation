@@ -46,7 +46,8 @@ test("Throughline sidebar lists every article exactly once", () => {
     "type-reference",
     "architecture",
     "errors-and-limits",
-    "releases",
+    "compatibility",
+    "custom-traces",
   ]) {
     assert.ok(names.has(name), `Missing required Throughline guide: ${name}`);
   }
@@ -96,5 +97,16 @@ test("The API, Markdown, and framework guides remain self-contained", () => {
   assert.match(content.get("type-reference") ?? "", /type StepApi =/);
   assert.match(content.get("markdown-mdx") ?? "", /remarkValidateThroughline/);
   assert.match(content.get("frameworks") ?? "", /Next\.js/);
-  assert.match(content.get("releases") ?? "", /v0\.0\.2/);
+  assert.match(content.get("compatibility") ?? "", /v0\.0\.2/);
+  assert.match(content.get("custom-traces") ?? "", /tracer\(\)/);
+});
+
+test("Throughline public docs exclude package-contribution procedures", () => {
+  for (const [name, doc] of content) {
+    assert.doesNotMatch(
+      doc,
+      /CONTRIBUTING\.md|how to (?:add|register) (?:a|new) domain (?:inside|in) the package|(?:change|modify) Throughline(?:'s)? source files|upstream pull request/i,
+      `${name}: package-maintainer instructions are not public usage documentation`,
+    );
+  }
 });

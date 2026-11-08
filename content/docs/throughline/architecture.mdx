@@ -1,6 +1,6 @@
 ---
-title: Architecture and execution model
-description: How Throughline parses authored blocks, validates programs, builds deterministic frames, and renders responsive scenes.
+title: How Throughline works
+description: Understand what happens when you compile a trace and how frames are rendered and played back.
 ---
 
 Throughline has two deliberately separate layers: a **React-free compiler** and an optional **React player**. The root package does not rely on DOM, browser storage, a service, a network connection, or React.
@@ -78,7 +78,7 @@ A user-supplied snippet is input to a **bounded model compiler**, not a sandbox 
 
 ## Compatibility boundaries
 
-The npm package is `0.0.2`; the Program and Trace schemas both have `version: 1`. They are independent. Four public import specifiers are supported; no internal layout, seek reducer, domain registry, or file-path import is a stable public extension hook.
+The npm package is `0.0.2`; the Program and Trace schemas both have `version: 1`. They are independent. When building an application, use the four supported public imports and the documented Program/Trace data structures. The built-in player handles layout and playback; custom consumers should work with the public frame data.
 
 For concrete integration patterns, see [Markdown and MDX](/docs/throughline/markdown-mdx), [Other frameworks and products](/docs/throughline/frameworks), and [API reference](/docs/throughline/programmatic-api).
 

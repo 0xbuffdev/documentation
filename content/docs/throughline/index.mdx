@@ -60,8 +60,8 @@ This produces an initial frame with `counter = 0` and a second frame with `count
 | Use every public compiler and tracer function | [Programmatic API](/docs/throughline/programmatic-api) |
 | Look up a precise TypeScript shape or event | [Types and exports](/docs/throughline/type-reference) |
 | Diagnose incorrect source or limits | [Errors and limits](/docs/throughline/errors-and-limits) |
-| Generate a custom computed trace | [Extending computations](/docs/throughline/adding-domains) |
-| Check version and upgrade requirements | [Versions and releases](/docs/throughline/releases) |
+| Record my own algorithms with the public `tracer()` API | [Custom traces with TypeScript](/docs/throughline/custom-traces) |
+| Confirm supported versions and upgrade requirements | [Compatibility and upgrading](/docs/throughline/compatibility) |
 
 ## Five supported domains
 
@@ -95,9 +95,9 @@ Read the complete [CSS and theming reference](/docs/throughline/styling) for the
 
 ## Versions and compatibility
 
-This documentation targets `@0xbuff/throughline@0.0.2` (November 8, 2026). The two independent schema fields, `Program.version` and `Trace.version`, are both **`1`**. The package is ESM-only, ships TypeScript declarations, targets Node.js **24+**, and supports optional React 19 peers. See [Versions and releases](/docs/throughline/releases) for release notes and upgrade steps.
+This documentation targets `@0xbuff/throughline@0.0.2` (November 8, 2026). The two independent schema fields, `Program.version` and `Trace.version`, are both **`1`**. The package is ESM-only, ships TypeScript declarations, targets Node.js **24+**, and supports optional React 19 peers. See [Compatibility and upgrading](/docs/throughline/compatibility) for release notes and upgrade steps.
 
-For source contributions, bug reports, or release provenance, the [public repository](https://github.com/0xbuffdev/throughline) is available; all technical user guidance is provided here.
+For installation, authoring, styling, API integration, and troubleshooting, use the guides on this site. To report a bug in the package, use its [issue tracker](https://github.com/0xbuffdev/throughline/issues).
 
 <Callout type="info">
   The core compiler is React-free and network-free. Only import `@0xbuff/throughline/react` and the CSS export when you need the bundled visual player.

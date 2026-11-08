@@ -99,7 +99,7 @@ const trace = compileProgram(t.program());
 console.log(trace.frames[1].state.entities[0].value); // 1
 ~~~
 
-All declarations happen outside steps. The callback must be **synchronous**; async callbacks and nested step recording are rejected. Inputs are copied into the recording, and `get()` and `program()` return detached data. See [Programmatic trace recipes](/docs/throughline/recipes).
+All declarations happen outside steps. The callback must be **synchronous**; async callbacks and nested step recording are rejected. Inputs are copied into the recording, and `get()` and `program()` return detached data. For a complete algorithm example using the public builder, see [Custom traces with TypeScript](/docs/throughline/custom-traces). See [Recipes](/docs/throughline/recipes) for more examples.
 
 ## Public data structures
 
@@ -174,5 +174,5 @@ For complete, exact declarations of every exported event, program, trace, tracer
 
 ## Versioning contract
 
-Both `Program.version` and `Trace.version` are **1**; the npm package version is **0.0.2**. Runtime types, grammar, and playback behavior may change in subsequent pre-1.0 releases. Check the [release notes](/docs/throughline/releases) when upgrading.
+Both `Program.version` and `Trace.version` are **1**; the npm package version is **0.0.2**. Runtime types, grammar, and playback behavior may change in subsequent pre-1.0 releases. Follow the [compatibility and upgrading guide](/docs/throughline/compatibility) when changing versions.
 

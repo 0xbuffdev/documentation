@@ -24,8 +24,8 @@ env:
   #   Zone (0xbuff.com) → Zone Settings:Edit, DNS:Edit (custom domains)
   # Account ID is not secret, but keep it in CI config for scoping.
   #
-  # The build is self-contained: the tool catalog comes from the committed
-  # src/lib/tools.generated.json and no private repo is fetched on CI.
+  # The docs site reads its published catalog from the environment's R2 bucket.
+  # The private content-contract package is installed with a short-lived GitHub token.
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
@@ -69,7 +69,9 @@ jobs:
       - name: Tests
         run: pnpm test
 
-      # The Vite plugin selects the Wrangler environment at build time.\n      # Deploy only the generated config; do not pass Wrangler --env.\n      - name: Deploy staging
+      # The Vite plugin selects the Wrangler environment at build time.
+      # Deploy only the generated config; do not pass Wrangler --env.
+      - name: Deploy staging
         id: deploy-staging
         if: github.ref_name == 'staging'
         run: |
@@ -94,7 +96,10 @@ jobs:
               echo "no smoke target for $REF" && exit 0
               ;;
           esac
-          # Homepage and /docs require the environment-specific R2 products manifest.\n          curl -fsS "$URL/" >/dev/null\n          curl -fsS -L "$URL/docs" >/dev/null\n          curl -fsS "$URL/llms.txt" | head -n 4
+          # Homepage and /docs require the environment-specific R2 products manifest.
+          curl -fsS "$URL/" >/dev/null
+          curl -fsS -L "$URL/docs" >/dev/null
+          curl -fsS "$URL/llms.txt" | head -n 4
           curl -fsS "$URL/llms-full.txt" | head -n 4
           curl -fsS "$URL/robots.txt" | head -n 2
           echo "sitemap routes:"

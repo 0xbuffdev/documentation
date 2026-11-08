@@ -10,16 +10,18 @@ import type { Route } from "./+types/search-index[.]json";
  */
 export async function loader({ context }: Route.LoaderArgs) {
 	const allowed = new Set((await getDocumentedProducts(context)).map((p) => p.slug));
-	const indexes = source
-		.getPages()
-		.filter((page) => allowed.has(page.slugs[0]))
-		.map((page) => ({
-			title: page.data.title,
-			description: page.data.description,
-			url: page.url,
-			id: page.url,
-			structuredData: page.data.structuredData,
-		}));
+	const indexes = await Promise.all(
+		source
+			.getPages()
+			.filter((page) => allowed.has(page.slugs[0]))
+			.map(async (page) => ({
+				title: page.data.title,
+				description: page.data.description,
+				url: page.url,
+				id: page.url,
+				structuredData: await page.data.structuredData(),
+			})),
+	);
 
 	const server = createSearchAPI("advanced", { indexes });
 	const response = await server.staticGET();

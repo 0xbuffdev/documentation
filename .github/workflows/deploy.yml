@@ -1,67 +1,95 @@
-name: Deploy
+name: Deploy Documentation
 
-# Deploys the docs site after CI-worthy pushes:
-#   - merges to `staging` deploy the `staging` Worker environment
-#     (0xbuff-docs-staging, staging.docs.0xbuff.com)
-#   - merges to `main` deploy the production Worker environment
-#     (0xbuff-docs, docs.0xbuff.com)
+# Matching 0xNAND's release boundary: merging code never deploys remotely.
+# Releases require an explicit dispatch from main, exact confirmation,
+# environment-specific readiness and GitHub Environment protection.
 on:
-  push:
-    branches: [main, staging]
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Deployment target"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      confirmation:
+        description: "Type DEPLOY_STAGING or DEPLOY_PRODUCTION"
+        required: true
+        type: string
 
 concurrency:
-  group: deploy-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: documentation-release-${{ inputs.target }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
   packages: read
 
-env:
-  # CLOUDFLARE_API_TOKEN needs:
-  #   Account → Workers Scripts:Edit
-  #   Zone (0xbuff.com) → Zone Settings:Edit, DNS:Edit (custom domains)
-  # Account ID is not secret, but keep it in CI config for scoping.
-  #
-  # The docs site reads its published catalog from the environment's R2 bucket.
-  # The private content-contract package is installed with a short-lived GitHub token.
-  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
 jobs:
-  deploy:
+  authorize-release:
+    name: Verify explicit release request
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Require main and exact confirmation
+        env:
+          SOURCE_REF: ${{ github.ref }}
+          TARGET: ${{ inputs.target }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          if [[ "$SOURCE_REF" != "refs/heads/main" ]]; then
+            echo "::error::Documentation releases must be dispatched from main."
+            exit 1
+          fi
+          case "$TARGET" in
+            staging) expected="DEPLOY_STAGING" ;;
+            production) expected="DEPLOY_PRODUCTION" ;;
+            *) echo "::error::Invalid target."; exit 1 ;;
+          esac
+          if [[ "$CONFIRMATION" != "$expected" ]]; then
+            echo "::error::Release confirmation does not match the target."
+            exit 1
+          fi
 
-      - uses: pnpm/action-setup@v4
+  deploy:
+    name: Deploy Documentation
+    needs:
+      - authorize-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ inputs.target }}
+
+    steps:
+      - name: Require verified environment readiness
+        env:
+          RELEASE_READY: ${{ vars.DOCS_RELEASE_READY }}
+        shell: bash
+        run: |
+          if [[ "$RELEASE_READY" != "true" ]]; then
+            echo "::error::Documentation release blocked. Verify Cloudflare R2, domain, secrets and manifests, then set DOCS_RELEASE_READY=true in this GitHub Environment."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 11.2.2
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - name: Install
+      - name: Install with private package read permission
         run: pnpm install --frozen-lockfile
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build
-        run: |
-          if [ "${{ github.ref_name }}" = "staging" ]; then
-            pnpm build:staging
-          else
-            pnpm build
-          fi
-
-      - name: Verify generated deployment bindings
-        run: node scripts/check-deploy-config.mjs "${{ github.ref_name == 'staging' && 'staging' || 'production' }}"
-
-      - name: Report client bundle sizes
-        run: pnpm bundle:report
 
       - name: Typecheck
         run: pnpm typecheck
@@ -69,51 +97,52 @@ jobs:
       - name: Tests
         run: pnpm test
 
-      # The Vite plugin selects the Wrangler environment at build time.
-      # Deploy only the generated config; do not pass Wrangler --env.
-      - name: Deploy staging
-        id: deploy-staging
-        if: github.ref_name == 'staging'
+      - name: Build selected Cloudflare environment
+        env:
+          TARGET: ${{ inputs.target }}
+        shell: bash
         run: |
-          pnpm exec wrangler deploy
+          if [[ "$TARGET" == "staging" ]]; then
+            pnpm build:staging
+          else
+            pnpm build
+          fi
+          node scripts/check-deploy-config.mjs "$TARGET"
 
-      - name: Deploy production
-        id: deploy-production
-        if: github.ref_name == 'main'
+      - name: Report client bundle sizes
+        run: pnpm bundle:report
+
+      # @cloudflare/vite-plugin already wrote the selected flattened config.
+      # Do not pass --env to wrangler deploy.
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm exec wrangler deploy
 
-      - name: Smoke test
-        if: steps.deploy-staging.outcome == 'success' || steps.deploy-production.outcome == 'success'
-        run: |
-          case "$REF" in
-            staging)
-              URL=https://staging.docs.0xbuff.com
-              ;;
-            main)
-              URL=https://docs.0xbuff.com
-              ;;
-            *)
-              echo "no smoke target for $REF" && exit 0
-              ;;
-          esac
-          # Homepage and /docs require the environment-specific R2 products manifest.
-          curl -fsS "$URL/" >/dev/null
-          curl -fsS -L "$URL/docs" >/dev/null
-          curl -fsS "$URL/llms.txt" | head -n 4
-          curl -fsS "$URL/llms-full.txt" | head -n 4
-          curl -fsS "$URL/robots.txt" | head -n 2
-          echo "sitemap routes:"
-          curl -fsS "$URL/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | head -n 12
-
-          # Newsletter must be wired: an invalid probe must hit the form
-          # validation path (400) without creating a real Resend contact.
-          status="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL/subscribe" \
-            --data-urlencode "email=invalid")"
-          echo "POST /subscribe (invalid probe) -> $status"
-          case "$status" in
-            400) exit 0 ;;
-            503) echo "newsletter not configured yet: set RESEND_API_KEY as a Worker secret" ;;
-            *) echo "unexpected newsletter status $status" && exit 1 ;;
-          esac
+      - name: Smoke-test deployed environment
         env:
-          REF: ${{ github.ref_name }}
+          TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          case "$TARGET" in
+            staging) URL="https://staging.docs.0xbuff.com" ;;
+            production) URL="https://docs.0xbuff.com" ;;
+            *) echo "::error::Invalid smoke-test target"; exit 1 ;;
+          esac
+
+          curl --fail --silent --show-error "$URL/" >/dev/null
+          curl --fail --silent --show-error --location "$URL/docs" >/dev/null
+          curl --fail --silent --show-error "$URL/llms.txt" >/dev/null
+          curl --fail --silent --show-error "$URL/llms-full.txt" >/dev/null
+          curl --fail --silent --show-error "$URL/robots.txt" >/dev/null
+          curl --fail --silent --show-error "$URL/sitemap.xml" >/dev/null
+          curl --fail --silent --show-error "$URL/search-index.json" >/dev/null
+
+          # An invalid email must not create a Resend contact.
+          status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            -X POST "$URL/subscribe" --data-urlencode "email=invalid")"
+          case "$status" in
+            400|503) echo "Newsletter invalid-input probe: $status" ;;
+            *) echo "::error::Unexpected newsletter status $status"; exit 1 ;;
+          esac

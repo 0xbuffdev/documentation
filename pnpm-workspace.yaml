@@ -1,0 +1,4 @@
+# The first-party package is pinned to a verified immutable tarball in pnpm-lock.yaml.
+# All other dependencies retain pnpm 11's default 24-hour release-age policy.
+minimumReleaseAgeExclude:
+  - '@0xbuffdev/content-contract@0.1.0'

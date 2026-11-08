@@ -72,7 +72,6 @@ export const ROUTES = {
 /** Static application pages in addition to documentation pages discovered from MDX. */
 export const STATIC_PRERENDER_PATHS = [
 	ROUTES.robots,
-	ROUTES.searchIndex,
 	ROUTES.manifesto,
 ] as const;
 

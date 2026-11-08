@@ -59,7 +59,7 @@ async function readManifest(
 }
 
 export async function getDocumentedProducts(
-	context: RouterContextProvider,
+	context: Readonly<RouterContextProvider>,
 ): Promise<ReturnType<typeof selectDocumentedProducts>> {
 	const { env, ctx } = context.get(cloudflareContext);
 	const bucket = (env as Env & { CONTENT?: R2Bucket }).CONTENT;

@@ -10,3 +10,7 @@ build/
 
 # Cloudflare
 .wrangler/
+worker-configuration.d.ts
+
+# Local editor/agent configuration
+opencode.json

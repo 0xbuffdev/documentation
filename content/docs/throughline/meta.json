@@ -1,6 +1,34 @@
 {
-	"title": "Throughline",
-	"description": "Interactive step-player for complex systems",
-	"root": true,
-	"icon": "Play"
+  "title": "Throughline",
+  "description": "Markdown-authored deterministic state traces",
+  "root": true,
+  "icon": "Play",
+  "pages": [
+    "index",
+    "---Getting started---",
+    "getting-started",
+    "concepts",
+    "architecture",
+    "---Author traces---",
+    "flow",
+    "bindings",
+    "binary",
+    "matrix",
+    "callstack",
+    "recipes",
+    "---Render and customize---",
+    "react-player",
+    "styling",
+    "accessibility",
+    "---Integrate with products---",
+    "integrations",
+    "markdown-mdx",
+    "frameworks",
+    "custom-traces",
+    "---API and compatibility---",
+    "programmatic-api",
+    "type-reference",
+    "errors-and-limits",
+    "compatibility"
+  ]
 }

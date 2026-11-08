@@ -1,0 +1,54 @@
+---
+title: Binary addition
+description: Visualize unsigned ripple-carry addition one bit at a time.
+---
+
+The `binary` domain generates a trace for **unsigned binary addition**. Each step handles one column, starting at the least significant bit (rightmost position), and exposes the outgoing carry.
+
+## Input
+
+~~~md
+```thl binary
+a = 1011
+b = 0110
+```
+~~~
+
+The operands may be given in either order; both must be present. Each consists of **1 to 16 binary digits** with no prefixes, sign, separators, or other characters. The operands can have different lengths: the compiler left-pads the shorter operand with zeroes for the calculation.
+
+The example adds `1011` (11) and `0110` (6), producing `10001` (17).
+
+## What the trace contains
+
+- `a` and `b`: input value nodes rendered with the `bits` view.
+- `sum`: an array of **n + 1** cells, initially containing `"·"` placeholders, where n is the longer operand width.
+- `carry`: a numeric carry state, initially zero.
+
+For each bit position (rightmost first), the compiler emits a `bit 0`, `bit 1`, and so on. The beat:
+
+1. Reads the two operand bits and the previous carry.
+2. Computes the output bit and the new carry.
+3. Writes the corresponding `sum` cell and `carry`.
+4. Focuses the relevant positions and adds a note describing the arithmetic.
+
+A final `Result` beat fills the leading carry-out cell. The complete result is always **n + 1 digits**, including a leading zero when no final carry exists.
+
+## Read the generated data
+
+~~~ts
+import { compile } from "@0xbuff/throughline";
+
+const trace = compile("thl binary\na = 1011\nb = 0110");
+const last = trace.frames.at(-1);
+const sum = last?.state.entities.find((entity) => entity.id === "sum");
+
+console.log(trace.frames.length); // 6: initial + 4 bit beats + Result
+console.log(sum?.value); // [1, 0, 0, 0, 1]
+~~~
+
+The underlying input entity values are parsed integers, while the `sum` array explicitly records the fixed-width result. Use the last `sum` value when you need the output bits.
+
+## Scope
+
+The domain handles addition only: **no signed two's-complement mode, subtraction, overflow flags, or arbitrary-width arithmetic**. It does not simulate processor instructions. For a custom circuit or control flow, narrate it with [`flow`](/docs/throughline/flow).
+

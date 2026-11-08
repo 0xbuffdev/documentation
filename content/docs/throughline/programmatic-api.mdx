@@ -1,0 +1,178 @@
+---
+title: TypeScript API reference
+description: Public entry points, compilation functions, program and trace types, tracer, and semantic descriptions.
+---
+
+This page documents the exported TypeScript API of **`@0xbuff/throughline@0.0.2`**. Names listed here are exported from supported package entry points, not private source modules.
+
+## Public package entry points
+
+| Entry point | Purpose | React dependency |
+| --- | --- | --- |
+| `@0xbuff/throughline` | Source parsing, validation, compilation, type definitions, tracer, limits, descriptions | None |
+| `@0xbuff/throughline/react` | `ThroughlinePlayer`, `ThroughlinePlayerProps`, `SonificationOptions`, `SonificationEvent` | React 19 |
+| `@0xbuff/throughline/examples` | `EXAMPLES`: read-only sample descriptors and source strings | None |
+| `@0xbuff/throughline/styles/throughline.css` | Optional React player CSS | CSS only |
+
+Importing from private file paths, `dist/`, or `src/` is not supported.
+
+## Compilation
+
+### `compile(source: string): Trace`
+
+Accepts one fenced or bare-header `thl <domain>` source, routes it through a domain parser, validates, and produces version-1 frames.
+
+~~~ts
+import { compile } from "@0xbuff/throughline";
+
+const trace = compile('thl flow\nnode n "Number" = 1\nstep "Double"\nset n = 2');
+~~~
+
+Returns `Trace`; invalid input throws `ProgramError`.
+
+### `parseThl(source: string): ThlBlock | null`
+
+Parses **one** block into `{ kind, lines, source? }`. Returns `null` when the input does not begin with a Throughline header. It does not parse full Markdown documents.
+
+~~~ts
+import { parseThl } from "@0xbuff/throughline";
+
+const ast = parseThl("thl binary\na = 1\nb = 1");
+// { kind: "binary", lines: ["a = 1", "b = 1"], source: { line: 1 } }
+~~~
+
+### `compileAst(block: ThlBlock): Trace`
+
+For hosts that already parsed Markdown, dispatch a prepared `ThlBlock` with correct source-line offsets.
+
+~~~ts
+import { compileAst } from "@0xbuff/throughline";
+
+const trace = compileAst({
+  kind: "flow",
+  source: { line: 40 }, // line containing the fence/header
+  lines: ['node n "Number" = 1', 'step "Double"', 'set n = 2'],
+});
+~~~
+
+### `parseProgram(block: ThlBlock): Program`
+
+Parses the explicit **flow** language to a validated Program. Do not pass computed-domain operands here; use `compileAst` or `compile` for those.
+
+### `validateProgram(input: unknown): asserts input is Program`
+
+Validates the program shape, target identifiers, events, references, JSON values, visibility changes, and bounds. Throws `ProgramError` on failure.
+
+### `compileProgram(input: unknown): Trace`
+
+Validates and compiles a program directly. Use this if you constructed a program in TypeScript, used `tracer().program()`, or obtained a program from another trusted source.
+
+## Authoring a program in TypeScript
+
+### `tracer(): Tracer`
+
+The builder exposes:
+
+| Method | Purpose |
+| --- | --- |
+| `group(name, layout)` | Declare a layout group |
+| `node(id, label, value, options?)` | Declare an entity; options include `lane`, `view`, `hidden` |
+| `link(id, from, to, label?, options?)` | Declare a directed relation; can start hidden |
+| `get(target)` | Read the current value from the **last completed** step (detached copy) |
+| `step(label, callback)` | Record one synchronous beat |
+| `program()` | Return a detached version-1 Program |
+
+The step callback receives `StepApi` with `set(target, value)`, `focus(...targets)`, `send(relation, value?)`, `note(text)`, `show(kind, id)`, and `hide(kind, id)`.
+
+~~~ts
+import { compileProgram, tracer } from "@0xbuff/throughline";
+
+const t = tracer()
+  .node("count", "Count", 0)
+  .step("Increment", (s) => {
+    s.set("count", 1);
+    s.focus("count");
+    s.note("Count changed to one.");
+  });
+
+const trace = compileProgram(t.program());
+console.log(trace.frames[1].state.entities[0].value); // 1
+~~~
+
+All declarations happen outside steps. The callback must be **synchronous**; async callbacks and nested step recording are rejected. Inputs are copied into the recording, and `get()` and `program()` return detached data. For a complete algorithm example using the public builder, see [Custom traces with TypeScript](/docs/throughline/custom-traces). See [Recipes](/docs/throughline/recipes) for more examples.
+
+## Public data structures
+
+### `Program`
+
+~~~ts
+type Program = {
+  version: 1;
+  entities: Entity[];
+  relations: Relation[];
+  beats: Beat[];
+  groups?: SceneGroup[];
+};
+~~~
+
+An `Entity` has `id: string`, `label: string`, `value: Value`, and optional `lane`, `view`, `hidden`. A `Relation` has `id`, `from`, `to`, optional `label`, and optional `hidden`. A `SceneGroup` holds `name` and `layout` (`row`, `column`, `tree`).
+
+A `Beat` has `label`, `events`, and optional `source`. Events are the discriminated union of `set`, `focus`, `send`, `note`, `show`, and `hide` operations described in [Flow authoring](/docs/throughline/flow).
+
+### `Trace`, `Frame`, and `Snapshot`
+
+~~~ts
+type Trace = {
+  version: 1;
+  frames: Frame[];
+  groups?: SceneGroup[];
+};
+
+type Frame = {
+  index: number;
+  label: string;
+  state: Snapshot;
+  events: Event[];
+  source?: { line: number };
+};
+
+type Snapshot = {
+  entities: Entity[];
+  relations: Relation[];
+  active: string[];
+  changed: string[];
+  transfers: { relation: string; value?: Value }[];
+  notes: string[];
+};
+~~~
+
+`Value` is recursive finite JSON: `null | boolean | number | string | Value[] | { [key: string]: Value }`. No functions, `undefined`, dates, bigints, cyclic objects, or non-finite numbers are accepted as values.
+
+The public types also include `Diagnostic`, `Event`, `View`, `GroupLayout`, `SourceLocation`, `DomainName`, `StepApi`, and `Tracer`.
+
+## Errors, domains, and constants
+
+- `ProgramError` is the dedicated compilation error type. Its `diagnostics` array contains messages and optional source line / step positions.
+- `SUPPORTED_DOMAINS` lists `flow`, `bindings`, `binary`, `matrix`, and `callstack`.
+- `COMPILATION_LIMITS` exposes fixed source, program, trace, entity, relation, step, and event ceilings.
+- `describeFrame(frame, total?)` produces a semantic, readable summary of a compiled frame. Supply `total` when the full frame count is known.
+
+~~~ts
+import {
+  COMPILATION_LIMITS,
+  SUPPORTED_DOMAINS,
+  describeFrame,
+  type Trace,
+} from "@0xbuff/throughline";
+
+function descriptions(trace: Trace): string[] {
+  return trace.frames.map((frame) => describeFrame(frame, trace.frames.length));
+}
+~~~
+
+For complete, exact declarations of every exported event, program, trace, tracer, player prop, and sonification type, use the [complete type reference](/docs/throughline/type-reference). For all ten CSS custom properties, see [CSS and themes](/docs/throughline/styling).
+
+## Versioning contract
+
+Both `Program.version` and `Trace.version` are **1**; the npm package version is **0.0.2**. Runtime types, grammar, and playback behavior may change in subsequent pre-1.0 releases. Follow the [compatibility and upgrading guide](/docs/throughline/compatibility) when changing versions.
+

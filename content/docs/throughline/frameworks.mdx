@@ -1,0 +1,197 @@
+---
+title: Other products and frameworks
+description: Integrate the compiler and optional player into React, Next.js, React Router, Astro, Node tooling, static sites, and non-React apps.
+---
+
+Throughline can be used without a particular web framework. Choose the integration according to your host: the **core compiler** needs no React, while the **published interactive player** requires React 19 and its CSS.
+
+## Compatibility matrix for v0.0.2
+
+| Environment | Compiler | Official interactive player |
+| --- | --- | --- |
+| Node.js 24+ ESM script/build | Yes | No browser UI; can compile for a separate renderer |
+| React 19 + modern bundler | Yes | Yes |
+| React Router + Fumadocs MDX | Yes | Yes, after registering an MDX component |
+| Next.js App Router with React 19 | Yes | Yes, inside a client component |
+| Astro with React integration | Yes | Yes, in a hydrated React island |
+| Plain Markdown renderer | Yes, if host extracts code fences | Not without host rendering integration |
+| Vue, Svelte, or other UI libraries | Core Trace data can be consumed by compatible ESM tooling | No official native player in v0.0.2 |
+| Static exported JSON | Yes | A separate consumer is required |
+
+All examples assume **`@0xbuff/throughline@0.0.2`** and the supported Node.js environment of 24 or newer for Node-hosted tooling. A browser-only integration must still provide a compatible bundler and runtime; Node engine support does not imply an official, universal framework adapter.
+
+## React + Vite
+
+Install the package in a React 19 project:
+
+~~~sh
+npm install @0xbuff/throughline@0.0.2 react@^19 react-dom@^19
+~~~
+
+~~~tsx
+// src/components/TraceDiagram.tsx
+import { useMemo } from "react";
+import { compile } from "@0xbuff/throughline";
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+
+export function TraceDiagram({ source }: { source: string }) {
+  const trace = useMemo(() => compile(source), [source]);
+  return <ThroughlinePlayer trace={trace} className="course-trace" theme="auto" />;
+}
+~~~
+
+~~~ts
+// src/main.tsx or src/app.tsx, once
+import "@0xbuff/throughline/styles/throughline.css";
+~~~
+
+**Why memoize?** A newly compiled Trace has a new object identity; passing a new Trace on each parent render resets the player to its initial frame.
+
+## Next.js App Router
+
+The player uses effects, keyboard events, `ResizeObserver`, and optional browser audio. Wrap it in a **client component**.
+
+~~~tsx
+// app/components/TracePlayer.tsx
+"use client";
+
+import { useMemo } from "react";
+import { compile } from "@0xbuff/throughline";
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+
+export default function TracePlayer({ source }: { source: string }) {
+  const trace = useMemo(() => compile(source), [source]);
+  return <ThroughlinePlayer trace={trace} theme="auto" />;
+}
+~~~
+
+~~~tsx
+// app/layout.tsx — import the stylesheet globally, once
+import "@0xbuff/throughline/styles/throughline.css";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+~~~
+
+~~~tsx
+// app/page.tsx — server component may pass plain source text
+import TracePlayer from "./components/TracePlayer";
+
+export default function Page() {
+  return (
+    <TracePlayer source={'thl callstack\nfact 4'} />
+  );
+}
+~~~
+
+If you precompile on the server instead, the version-1 Trace consists of JSON-like data and can be serialized to the client. Avoid passing functions or class instances across the server/client boundary.
+
+## React Router + Fumadocs
+
+This documentation stack already provides an MDX component registry and a remark processing pipeline:
+
+- Add `ThroughlineExample` to the components returned by `getMDXComponents`.
+- Import the package CSS globally.
+- Add a remark validator or code-fence transformer in the Fumadocs MDX configuration.
+- Feed the original `thl` source or a precompiled Trace into the player.
+
+The complete copyable setup, including the Fumadocs component map, validator, and optional automatic-fence transformer, is in [Markdown and MDX integration](/docs/throughline/markdown-mdx).
+
+If upgrading an existing documentation app to install Throughline, check its **Node.js version** first. A Node 22-only app must update to Node 24+ for the package's supported engine contract.
+
+## Astro with a React island
+
+Astro can host a React player when the **React integration** is installed and configured.
+
+~~~tsx
+// src/components/TraceIsland.tsx
+import { useMemo } from "react";
+import { compile } from "@0xbuff/throughline";
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+import "@0xbuff/throughline/styles/throughline.css";
+
+export default function TraceIsland({ source }: { source: string }) {
+  const trace = useMemo(() => compile(source), [source]);
+  return <ThroughlinePlayer trace={trace} />;
+}
+~~~
+
+~~~astro
+---
+import TraceIsland from "../components/TraceIsland";
+const source = "thl binary\na = 1011\nb = 0110";
+---
+
+<h1>Binary addition</h1>
+<TraceIsland source={source} client:load />
+~~~
+
+The `client:load` directive hydrates the player so its browser interactions work. Without hydration you would have only a server-rendered, noninteractive starting state.
+
+## Node.js CLI and offline tooling
+
+You can compile examples in a build script with no React installed:
+
+~~~js
+// scripts/build-trace.mjs
+import { writeFile } from "node:fs/promises";
+import { compile, describeFrame } from "@0xbuff/throughline";
+
+const trace = compile("thl matrix\nA = [[1,2]]\nB = [[3],[4]]");
+const transcript = trace.frames
+  .map((frame) => describeFrame(frame, trace.frames.length))
+  .join("\n\n");
+
+await writeFile("trace.json", JSON.stringify(trace, null, 2));
+await writeFile("trace.txt", transcript);
+~~~
+
+This is useful for educational content builds, offline inspection, verifying lesson examples, and preparing versioned data for an application. The `Trace` model can be serialized as JSON; the library does **not** create image or video files from it.
+
+Before reusing persisted traces, verify `trace.version === 1`. Treat stored data as untrusted when crossing trust boundaries: parse/validate the source before publishing and do not use the trace as executable code.
+
+## Vue, Svelte, vanilla JS, or custom canvas rendering
+
+Only the compiler data model is framework-neutral; the official ready-made visual player is React. In another UI framework, you can compile the trace and read each frame's state:
+
+~~~ts
+import { compile, describeFrame } from "@0xbuff/throughline";
+
+const trace = compile("thl flow\nnode x \"X\" = 0\nstep \"Set\"\nset x = 1");
+
+let selected = 0;
+
+function selectFrame(next: number) {
+  selected = Math.max(0, Math.min(next, trace.frames.length - 1));
+  const frame = trace.frames[selected];
+  return {
+    title: frame.label,
+    summary: describeFrame(frame, trace.frames.length),
+    entities: frame.state.entities.filter((entity) => !entity.hidden),
+    relations: frame.state.relations.filter((relation) => {
+      const visible = new Set(
+        frame.state.entities.filter((entity) => !entity.hidden).map((entity) => entity.id),
+      );
+      return !relation.hidden && visible.has(relation.from) && visible.has(relation.to);
+    }),
+  };
+}
+~~~
+
+This is **state data**, not the built-in SVG scene layout. Your host must provide its own layout, connections, interaction, accessibility, and styles. There is no public `renderToSvg`, image exporter, or `<throughline-player>` Web Component entry point in v0.0.2.
+
+## Servers, workers, and other runtime boundaries
+
+- **No network dependency:** compilation uses no remote API, accounts, persistence, or telemetry.
+- **No code execution:** authored text is parsed and compiled; it is never evaluated as JavaScript.
+- **Browser bundling:** importing the root compiler is React-free; importing the player adds React and browser presentation code.
+- **Worker-style deployments:** these may be possible with modern ESM tooling but are **not** a separately documented/verified runtime target in v0.0.2. Test bundler compatibility and resource limits for each host.
+- **React Native:** the published player renders HTML/SVG DOM elements; it is not a React Native component.
+
+For custom visual appearance see [CSS customization](/docs/throughline/styling). For API, model types, and input validation see [TypeScript API](/docs/throughline/programmatic-api) and [Errors and limits](/docs/throughline/errors-and-limits).
+

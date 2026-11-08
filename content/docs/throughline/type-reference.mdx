@@ -1,0 +1,314 @@
+---
+title: Complete types and exports
+description: Every public Throughline v0.0.2 type, function signature, event variant, error shape, and package import.
+---
+
+This reference covers the **publicly exported symbols** of `@0xbuff/throughline@0.0.2` and `@0xbuff/throughline/react`. It is a self-contained companion to [API usage](/docs/throughline/programmatic-api) and [Flow authoring](/docs/throughline/flow).
+
+## Supported import paths
+
+~~~ts
+import {
+  compile,
+  compileAst,
+  compileProgram,
+  validateProgram,
+  parseThl,
+  parseProgram,
+  describeFrame,
+  tracer,
+  SUPPORTED_DOMAINS,
+  COMPILATION_LIMITS,
+  ProgramError,
+} from "@0xbuff/throughline";
+
+import type {
+  DomainName,
+  ThlBlock,
+  Program,
+  Trace,
+  Entity,
+  Relation,
+  Beat,
+  Event,
+  Frame,
+  Snapshot,
+  Diagnostic,
+  GroupLayout,
+  SceneGroup,
+  SourceLocation,
+  Value,
+  View,
+  StepApi,
+  Tracer,
+} from "@0xbuff/throughline";
+
+import {
+  ThroughlinePlayer,
+} from "@0xbuff/throughline/react";
+import type {
+  ThroughlinePlayerProps,
+  SonificationOptions,
+  SonificationEvent,
+} from "@0xbuff/throughline/react";
+
+import { EXAMPLES } from "@0xbuff/throughline/examples";
+import "@0xbuff/throughline/styles/throughline.css";
+~~~
+
+The last line is only needed when rendering the optional React player. The core import has no React dependency. Package internals (including layout, seek reducer, adapter implementations, and standalone sonification helpers) **are not public exports**.
+
+## Functions and return types
+
+| Symbol | Signature | Behavior |
+| --- | --- | --- |
+| `compile` | `(source: string) => Trace` | Parse one `thl` block and compile its domain |
+| `parseThl` | `(source: string) => ThlBlock | null` | Identify a single block; `null` for non-Throughline input |
+| `compileAst` | `(ast: ThlBlock) => Trace` | Compile a block extracted by a host Markdown parser |
+| `parseProgram` | `(ast: ThlBlock) => Program` | Parse and validate hand-authored `flow` statements |
+| `validateProgram` | `(input: unknown) => asserts input is Program` | Validate a version-1 program; throws on invalid input |
+| `compileProgram` | `(input: unknown) => Trace` | Compile a constructed Program into deterministic snapshots |
+| `tracer` | `() => Tracer` | Create a synchronous program builder |
+| `describeFrame` | `(frame: Frame, total?: number) => string` | Text summary of a frame |
+
+`validateProgram` and `compileProgram` accept `unknown` on purpose. Use the assertion on data crossing trust boundaries; do not force-cast untrusted JSON into `Program`. Passing `compileProgram` a valid Program validates it again.
+
+## Authoring and schema types
+
+~~~ts
+type DomainName = "flow" | "bindings" | "binary" | "matrix" | "callstack";
+
+type ThlBlock = {
+  kind: string;
+  lines: string[];
+  source?: { line: number };
+};
+
+type Value =
+  | null
+  | boolean
+  | number
+  | string
+  | Value[]
+  | { [key: string]: Value };
+
+type View =
+  | "auto"
+  | "text"
+  | "number"
+  | "array"
+  | "stack"
+  | "matrix"
+  | "bits"
+  | "record";
+
+type GroupLayout = "row" | "column" | "tree";
+type SceneGroup = { name: string; layout: GroupLayout };
+type SourceLocation = { line: number };
+
+type Entity = {
+  id: string;
+  label: string;
+  value: Value;
+  lane?: string;
+  view?: View;
+  hidden?: boolean;
+};
+
+type Relation = {
+  id: string;
+  from: string;
+  to: string;
+  label?: string;
+  hidden?: boolean;
+};
+
+type Event = (
+  | { op: "set"; target: string; value: Value }
+  | { op: "focus"; targets: string[] }
+  | { op: "send"; relation: string; value?: Value }
+  | { op: "note"; text: string }
+  | { op: "show" | "hide"; kind: "node" | "link"; id: string }
+) & { source?: SourceLocation };
+
+type Beat = {
+  label: string;
+  events: Event[];
+  source?: SourceLocation;
+};
+
+type Program = {
+  version: 1;
+  entities: Entity[];
+  relations: Relation[];
+  beats: Beat[];
+  groups?: SceneGroup[];
+};
+~~~
+
+These are **structural TypeScript types**, not an invitation to bypass runtime validation. Values must be finite JSON; program shape, identifiers, references, nesting, event operations, and conflicts are checked at compile time.
+
+### Example: construct a Program without the text grammar
+
+~~~ts
+import { compileProgram, type Program } from "@0xbuff/throughline";
+
+const program: Program = {
+  version: 1,
+  entities: [{ id: "count", label: "Count", value: 0 }],
+  relations: [],
+  beats: [
+    {
+      label: "Increment",
+      events: [
+        { op: "set", target: "count", value: 1 },
+        { op: "note", text: "Count is one." },
+      ],
+    },
+  ],
+};
+
+const trace = compileProgram(program);
+~~~
+
+## Snapshot and trace types
+
+~~~ts
+type Snapshot = {
+  entities: Entity[];
+  relations: Relation[];
+  active: string[];
+  changed: string[];
+  transfers: { relation: string; value?: Value }[];
+  notes: string[];
+};
+
+type Frame = {
+  index: number;
+  label: string;
+  state: Snapshot;
+  events: Event[];
+  source?: SourceLocation;
+};
+
+type Trace = {
+  version: 1;
+  frames: Frame[];
+  groups?: SceneGroup[];
+};
+~~~
+
+**Frame zero** is `Initial state`; following frames represent the completed beats. `changed` contains addressed target strings written by `set`, not only semantically different values. `active` includes both explicitly focused and written targets. The `transfers` array contains transient annotations, while entity values and visibility persist.
+
+### Diagnostics and errors
+
+~~~ts
+type Diagnostic = {
+  message: string;
+  line?: number; // 1-based source line
+  beat?: number; // 0-based beat index
+};
+
+// At runtime:
+try {
+  // compile(...)
+} catch (error) {
+  if (error instanceof ProgramError) {
+    const diagnostics: Diagnostic[] = error.diagnostics;
+    console.error(diagnostics);
+  } else {
+    throw error;
+  }
+}
+~~~
+
+`ProgramError` extends `Error`, has `name === "ProgramError"`, and joins diagnostics into its human-readable message. A diagnostic may have a line, beat, both, or neither. See [Errors and limits](/docs/throughline/errors-and-limits).
+
+## Tracer and step-writer interfaces
+
+~~~ts
+type StepApi = {
+  set(target: string, value: Value): void;
+  focus(...targets: string[]): void;
+  send(relation: string, value?: Value): void;
+  note(text: string): void;
+  show(kind: "node" | "link", id: string): void;
+  hide(kind: "node" | "link", id: string): void;
+};
+
+type Tracer = {
+  group(name: string, layout: GroupLayout): Tracer;
+  node(
+    id: string,
+    label: string,
+    value: Value,
+    options?: { lane?: string; view?: View; hidden?: boolean },
+  ): Tracer;
+  link(
+    id: string,
+    from: string,
+    to: string,
+    label?: string,
+    options?: { hidden?: boolean },
+  ): Tracer;
+  get(target: string): Value | undefined;
+  step(label: string, body: (step: StepApi) => void): Tracer;
+  program(): Program;
+};
+~~~
+
+`step` callbacks run synchronously. The writer closes on return, and a rejected step does not commit its state. `get` reads the last **completed** step, not partially recorded writes. `program()` returns detached output. For detailed examples, see [Programmatic API](/docs/throughline/programmatic-api) and [Recipes](/docs/throughline/recipes).
+
+## React types
+
+~~~ts
+type SonificationEvent = {
+  step: number;
+  total: number;
+  frequency: number;
+  durationMs: number;
+};
+
+type SonificationOptions = {
+  enabled?: boolean;
+  onTone?: (event: SonificationEvent) => void;
+};
+
+interface ThroughlinePlayerProps {
+  trace: Trace;
+  className?: string;
+  theme?: "light" | "dark" | "auto";
+  sonification?: SonificationOptions;
+}
+~~~
+
+The `ThroughlinePlayer` function is the sole public React component exported at `@0xbuff/throughline/react`. It does not provide public controlled-frame props or export its internal seek and SVG components. `onTone` replaces built-in audio with a caller callback.
+
+## Limits and domain constants
+
+~~~ts
+const SUPPORTED_DOMAINS: readonly DomainName[] = [
+  "flow",
+  "bindings",
+  "binary",
+  "matrix",
+  "callstack",
+];
+
+const COMPILATION_LIMITS = {
+  sourceCharacters: 262_144,
+  programUnits: 1_000_000,
+  traceUnits: 8_000_000,
+  entities: 200,
+  relations: 1000,
+  steps: 2000,
+  events: 10_000,
+} as const;
+~~~
+
+These are the published v0.0.2 values, not exact heap or CPU-time guarantees. [Domain limits and error handling](/docs/throughline/errors-and-limits).
+
+## Examples export
+
+`EXAMPLES` is a readonly array of sample descriptors `{ id, title, description, source }`. The three shipped examples are `reconciliation`, `references`, and `matrix`; each `source` compiles through the root `compile` API. These are ready-made source examples, not additional compile domains.
+

@@ -1,0 +1,215 @@
+---
+title: CSS, themes, and customization
+description: Every published Throughline CSS token, theme mode, player selector, overrides, accessibility styling, and host integration.
+---
+
+The optional React player ships a **standalone CSS file**. Its declarations are scoped under the `.thl` root class, and the primary visual contract is a set of **ten `--thl-*` custom properties**. You do not need Tailwind, CSS-in-JS, a CSS framework, or a separate theme provider.
+
+The compiler and trace format are entirely independent of CSS. The stylesheet affects only `ThroughlinePlayer`.
+
+## Install and import the published CSS
+
+~~~sh
+npm install @0xbuff/throughline@0.0.2 react@^19 react-dom@^19
+~~~
+
+~~~tsx
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+import "@0xbuff/throughline/styles/throughline.css";
+
+export function Diagram({ trace }: { trace: import("@0xbuff/throughline").Trace }) {
+  return <ThroughlinePlayer trace={trace} />;
+}
+~~~
+
+Import **`@0xbuff/throughline/styles/throughline.css` once** through the host bundler (typically a root stylesheet or application entry). The exported CSS is not imported automatically by the compiler or the React component. Don't import internal `src/styles/throughline.css` or `dist` paths: they are not supported package imports.
+
+For a bundler that disallows CSS imports from TypeScript, import the same public CSS specifier from your root CSS instead:
+
+~~~css
+@import "@0xbuff/throughline/styles/throughline.css";
+~~~
+
+Your bundler must support resolving CSS package exports. This is not a raw URL to load directly with an HTML `<link>`.
+
+## Choose the built-in theme
+
+~~~tsx
+<ThroughlinePlayer trace={trace} theme="auto" />
+<ThroughlinePlayer trace={trace} theme="light" />
+<ThroughlinePlayer trace={trace} theme="dark" />
+~~~
+
+| Value | Meaning |
+| --- | --- |
+| `auto` (default) | Leaves `color-scheme: light dark` on the player, following the browser/host's resolved scheme |
+| `light` | Sets `data-theme="light"` and forces `color-scheme: light` |
+| `dark` | Sets `data-theme="dark"` and forces `color-scheme: dark` |
+
+The packaged palette uses CSS `light-dark()` values. The `theme` prop controls color scheme selection; it does **not** add a Tailwind `dark` class or read your application theme state. If your application uses an explicit theme toggle independent of the OS scheme, pass `theme={theme === "dark" ? "dark" : "light"}` from your application state.
+
+## Complete custom-property reference
+
+These are **all ten** CSS variables declared in the released v0.0.2 player stylesheet. Values are shown in their default **light / dark** order.
+
+| Variable | Light default | Dark default | Used for |
+| --- | --- | --- | --- |
+| `--thl-bg` | `#fcfcfa` | `#141b19` | Player backdrop; background for link-label masking |
+| `--thl-panel` | `#f3f4f0` | `#19231f` | Group panels, cell backgrounds, hovered control surfaces |
+| `--thl-surface` | `#ffffff` | `#202c26` | Node-card fills |
+| `--thl-text` | `#202b28` | `#ecf2eb` | Main text, values, control labels |
+| `--thl-muted` | `#596761` | `#a5b5a9` | Secondary captions, lane labels, link strokes, count |
+| `--thl-line` | `#d5dcd5` | `#3d4e43` | Borders and separators |
+| `--thl-focus` | `#036c62` | `#75e5b7` | Focus ring, selected state, transfers, active controls |
+| `--thl-focus-bg` | `#e0f4ed` | `#183d31` | Focused cells and primary playback button background |
+| `--thl-change` | `#8b4b08` | `#ffce83` | Changed-value label and border |
+| `--thl-change-bg` | `#fff0cf` | `#45371f` | Changed-value cell background |
+
+Tokens apply to **both SVG and HTML** parts of the player. Changing `--thl-focus`, for example, changes the focus stroke, highlighted transfers, primary playback text, timeline accent, and keyboard focus outline. A `set` event may mark a target as active even when its value did not change; changed-value styling is based on comparing to the previous frame.
+
+### A scoped brand theme
+
+The player root always has the class `.thl`. Add your own class via `className` and override variables **on that root**, after importing the package CSS:
+
+~~~tsx
+<ThroughlinePlayer
+  trace={trace}
+  className="my-learning-trace"
+  theme="dark"
+/>
+~~~
+
+~~~css
+/* Load this after the package stylesheet. */
+.thl.my-learning-trace {
+  --thl-bg: #101522;
+  --thl-panel: #171e31;
+  --thl-surface: #222b43;
+  --thl-text: #f2f5ff;
+  --thl-muted: #b3c0de;
+  --thl-line: #425172;
+  --thl-focus: #9fd4ff;
+  --thl-focus-bg: #1d3c65;
+  --thl-change: #ffd68d;
+  --thl-change-bg: #4e3a20;
+}
+~~~
+
+Because v0.0.2 **defines the token values directly on `.thl`**, defining them only on `:root` or a parent (for example `body`) will not override that root's defaults. Target `.thl.my-learning-trace` or another selector matching the player itself. Load your overrides later or use greater specificity; avoid `!important` unless you are resolving a deliberate cascade conflict.
+
+### Different colors for light and dark
+
+You can configure both schemes without React state:
+
+~~~css
+.thl.lesson {
+  --thl-bg: #fff;
+  --thl-text: #101828;
+  --thl-focus: #006d77;
+  --thl-focus-bg: #e7f8f7;
+}
+
+@media (prefers-color-scheme: dark) {
+  .thl.lesson {
+    --thl-bg: #0d1418;
+    --thl-text: #f0f5f7;
+    --thl-focus: #80e4dd;
+    --thl-focus-bg: #163a3c;
+  }
+}
+~~~
+
+This media-query pattern follows the OS preference; if your app has an independent theme switch, use root classes or `data-theme` selectors instead. For example, `.thl.lesson[data-theme="dark"]` styles an explicitly dark player.
+
+## Targeting specific elements
+
+Tokens are the preferred customization API. For layout or typography changes, these are the main **v0.0.2 implementation selectors**. They are provided for advanced overrides and may change in a future pre-1.0 release.
+
+| Selector | Element / responsibility |
+| --- | --- |
+| `.thl` | Focusable root group, theme and container-size boundary |
+| `.thl-scene` | Responsive SVG scene |
+| `.thl-group`, `.thl-group-label` | Lane background and label |
+| `.thl-node`, `.thl-node-label` | Entity card and title |
+| `.thl-focused` | Focus state on a node or cell |
+| `.thl-cell`, `.thl-changed` | Value-cell content and changed state |
+| `.thl-index`, `.thl-window` | Cell indices and truncated-value indicators |
+| `.thl-link`, `.thl-edge`, `.thl-edge-label` | Connection, stroke, and edge label |
+| `.thl-transferred`, `.thl-flow` | Transfer highlighting and animated stroke |
+| `.thl-caption`, `.thl-step`, `.thl-transfers` | Step number, notes, transfer captions |
+| `.thl-controls`, `.thl-play` | Buttons, speed selector, and playback control panel |
+| `.thl-timeline`, `.thl-count` | Range input and current/total frame count |
+| `.thl-inspector` | Expandable textual state inspection |
+| `.thl-empty`, `.thl-sr-only` | Empty states and visually hidden accessible text |
+
+Examples of **scoped structural overrides**:
+
+~~~css
+.thl.lesson {
+  border-radius: 8px;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+.thl.lesson .thl-caption {
+  padding: 20px 24px;
+}
+
+.thl.lesson .thl-node-label {
+  font-size: 13px;
+}
+
+.thl.lesson .thl-controls button {
+  border-radius: 6px;
+}
+~~~
+
+SVG presentation uses CSS `fill` and `stroke`, not just HTML `color`. For a link stroke, target `.thl.lesson .thl-edge` or change the relevant token. Avoid applying `display: none` to labels, live regions, control focus outlines, or captions; these are part of the player’s accessibility model.
+
+## Width, layout, typography, and motion
+
+The root uses `width: 100%`, `min-width: 0`, `overflow: hidden`, `container-type: inline-size`, and `box-sizing: border-box`. Scene geometry is calculated in JavaScript for the available width; it is **not** a pure CSS grid. The player measures its root after mount using `ResizeObserver` and fits nodes, lanes, and edges to that measurement.
+
+~~~css
+.trace-column {
+  min-width: 0; /* Important in flex/grid columns. */
+  max-width: 860px;
+  width: 100%;
+}
+
+.trace-column > .thl {
+  width: 100%;
+}
+~~~
+
+The default player uses a 14px base font; value-cell text is 13px. The CSS container query at **480px or narrower** places the timeline on its own row. Avoid making the player extremely narrow, replacing its SVG dimensions, or forcing fixed heights if you want its measurement and layout assumptions to remain valid.
+
+Transferred edges animate for 350ms by default. The shipped stylesheet already disables that animation for users who request reduced motion:
+
+~~~css
+@media (prefers-reduced-motion: reduce) {
+  .thl-flow { animation: none; }
+}
+~~~
+
+You can disable transfer animations for all users in your own stylesheet:
+
+~~~css
+.thl.lesson .thl-flow {
+  animation: none;
+}
+~~~
+
+## Common CSS troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| Bare, unformatted player | Missing stylesheet | Import the exact public CSS export once |
+| Custom palette not taking effect | Tokens defined only on `:root` or another ancestor | Set tokens directly on `.thl.your-class` |
+| Overrides lost | Package CSS loaded after overrides, or insufficient specificity | Move overrides after package import and scope root |
+| Theme doesn't follow app toggle | `theme="auto"` follows resolved color scheme, not your state variable | Pass `light` or `dark` explicitly |
+| SVG overflow or tiny labels | Host constrained width / conflicting structural CSS | Allow `min-width: 0`; avoid overriding SVG geometry |
+| Transfer animations feel distracting | Default animated `.thl-flow` stroke | Respect reduced motion or disable animation |
+| Labels fail color contrast | Custom foreground and background combination | Verify text, focus, change, and muted contrast in both themes |
+
+For full player behavior and props, see [React player](/docs/throughline/react-player). For non-React consumers, see [Other products and frameworks](/docs/throughline/frameworks).
+

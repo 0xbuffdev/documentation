@@ -1,0 +1,142 @@
+---
+title: Worked examples and recipes
+description: Copyable flow traces and a programmatic TypeScript tracer example for teaching state changes.
+---
+
+These examples demonstrate the five-domain model without claiming to execute the algorithms or systems being explained. Each block is valid input to `compile()`. Use the [Flow reference](/docs/throughline/flow) when editing event syntax.
+
+## Recipe 1: a queue receiving and consuming items
+
+Show two distinct changes: enqueueing an item, then consuming the first element.
+
+~~~md
+```thl flow
+group "Queue" as row
+node pending "Pending items" in "Queue" as array = ["A"]
+node active "Active job" in "Queue" = null
+link take pending -> active "dequeue"
+
+step "Enqueue B"
+  set pending = ["A","B"]
+  focus pending
+  note "B joins the end of the queue."
+
+step "Take A"
+  send take = "A"
+  focus pending, active
+  note "A is selected for processing."
+
+step "Update state"
+  set pending = ["B"]
+  set active = "A"
+  focus pending, active
+  note "A leaves the queue and becomes active."
+```
+~~~
+
+**Why two beats for taking a job?** A transfer event does not mutate either endpoint. The separate update makes the before-and-after state visible.
+
+## Recipe 2: a staged deployment
+
+Show the distinction between a prepared artifact, a live deployment, and a successful verification.
+
+~~~md
+```thl flow
+group "Release" as row
+node build "Artifact" in "Release" = "built"
+node stage "Staging" in "Release" = "idle"
+node probe "Health check" in "Release" hidden = null
+link deploy build -> stage "deploy"
+link check stage -> probe "probe" hidden
+
+step "Deploy to staging"
+  send deploy = "artifact"
+  set stage = "deploying"
+  focus stage
+
+step "Deployment complete"
+  set stage = "running"
+  note "The staged artifact is running."
+
+step "Verify"
+  show node probe
+  show link check
+  send check = "request"
+  set probe = "passing"
+  focus probe
+  note "The health check has passed."
+```
+~~~
+
+This is a conceptual workflow. Throughline neither deploys services nor performs real health checks.
+
+## Recipe 3: show a replacement node without erasing history
+
+~~~md
+```thl flow
+node before "Old value" = 1
+node after "New value" hidden = 2
+link replace before -> after "replaced by" hidden
+
+step "Prepare replacement"
+  show node after
+  show link replace
+  focus before, after
+  send replace = 2
+
+step "Commit replacement"
+  hide node before
+  hide link replace
+  focus after
+  note "The old object disappears from the scene, not from earlier frames."
+```
+~~~
+
+The previous snapshots remain available for seeking. Hidden nodes also retain their values.
+
+## Recipe 4: generate a trace in TypeScript
+
+Use `tracer()` if an algorithm is easier to express as code but you want explicit educational snapshots rather than automatic instrumentation:
+
+~~~ts
+import { compileProgram, tracer } from "@0xbuff/throughline";
+
+const t = tracer();
+t.node("values", "Values", [3, 1, 2], { view: "array" });
+
+t.step("Read first pair", (s) => {
+  s.focus("values[0]", "values[1]");
+  s.note("The first two values are out of order.");
+});
+
+t.step("Swap first pair", (s) => {
+  s.set("values[0]", 1);
+  s.set("values[1]", 3);
+  s.focus("values[0]", "values[1]");
+  s.note("The first pair is now ordered.");
+});
+
+const trace = compileProgram(t.program());
+console.log(trace.frames.at(-1)?.state.entities[0].value); // [1, 3, 2]
+~~~
+
+Calling `t.get("values")` between completed steps reads the current detached value. The step callback is synchronous; all events within it form one atomic beat. You are responsible for the correctness of the narrated algorithm.
+
+## Other starting points
+
+Throughline ships three reference fixtures that can be imported rather than copied from prose:
+
+~~~ts
+import { EXAMPLES } from "@0xbuff/throughline/examples";
+import { compile } from "@0xbuff/throughline";
+
+const reconciliation = EXAMPLES.find((example) => example.id === "reconciliation");
+if (!reconciliation) throw new Error("Example missing");
+
+const trace = compile(reconciliation.source);
+~~~
+
+The current package includes **Reconciliation**, **Shared references**, and **Matrix multiplication**.
+
+For built-in computations, use the dedicated [bindings](/docs/throughline/bindings), [binary](/docs/throughline/binary), [matrix](/docs/throughline/matrix), or [callstack](/docs/throughline/callstack) domain guides instead of hand-authoring every arithmetic step.
+

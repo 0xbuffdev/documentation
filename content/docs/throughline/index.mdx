@@ -1,7 +1,105 @@
 ---
 title: Throughline
-description: Turns trace blocks authored in markdown into interactive step-player scenes to inspect execution flows.
+description: Complete documentation for authoring, compiling, rendering, styling, and integrating deterministic state traces.
 icon: Play
 ---
 
-Documentation for Throughline is coming soon. Check back later for guides, references, and interactive demos.
+**Throughline** turns human-readable state changes into deterministic, inspectable snapshots. You can author a `thl` block in Markdown, compile it to a structured `Trace` with pure TypeScript, and optionally play it as a responsive, accessible SVG visualization in React 19.
+
+These pages document the **published v0.0.2 API** in full. You should not need to leave the documentation site to discover supported syntax, player props, program types, CSS customization, Markdown/MDX authoring, or how to integrate Throughline into another product.
+
+## Get running
+
+~~~sh
+npm install @0xbuff/throughline@0.0.2
+~~~
+
+For the optional player, install React and React DOM 19 as peers, then import the published CSS:
+
+~~~sh
+npm install react@^19 react-dom@^19
+~~~
+
+~~~tsx
+import { compile } from "@0xbuff/throughline";
+import { ThroughlinePlayer } from "@0xbuff/throughline/react";
+import "@0xbuff/throughline/styles/throughline.css";
+
+const trace = compile([
+  "thl flow",
+  'node counter "Counter" = 0',
+  'step "Increment"',
+  "  set counter = 1",
+  "  focus counter",
+  '  note "The value is now one."',
+].join("\n"));
+
+export function Example() {
+  return <ThroughlinePlayer trace={trace} />;
+}
+~~~
+
+This produces an initial frame with `counter = 0` and a second frame with `counter = 1`. Seeking and replaying the trace does not execute the source again. Follow [Getting started](/docs/throughline/getting-started) for a complete runnable setup.
+
+## Find the right guide
+
+| I want to… | Start here |
+| --- | --- |
+| Install and compile my first trace | [Getting started](/docs/throughline/getting-started) |
+| Understand the runtime and snapshot model | [Core concepts](/docs/throughline/concepts) and [Architecture](/docs/throughline/architecture) |
+| Create custom algorithm or workflow steps | [Flow authoring](/docs/throughline/flow) and [Recipes](/docs/throughline/recipes) |
+| Show assignments, copies, aliases, and heap mutation | [Bindings domain](/docs/throughline/bindings) |
+| Demonstrate ripple-carry addition | [Binary domain](/docs/throughline/binary) |
+| Work through matrix multiplication | [Matrix domain](/docs/throughline/matrix) |
+| Explain factorial recursion and call stacks | [Callstack domain](/docs/throughline/callstack) |
+| Embed the official visual player | [React player](/docs/throughline/react-player) |
+| Rebrand colors, borders, controls, and themes | [CSS and themes](/docs/throughline/styling) |
+| Support screen readers and keyboard interaction | [Accessibility](/docs/throughline/accessibility) |
+| Use trace code fences inside Markdown or MDX | [Markdown and MDX](/docs/throughline/markdown-mdx) |
+| Integrate in Next.js, Astro, Fumadocs, Vite, or a Node build | [Other frameworks and products](/docs/throughline/frameworks) |
+| Use every public compiler and tracer function | [Programmatic API](/docs/throughline/programmatic-api) |
+| Look up a precise TypeScript shape or event | [Types and exports](/docs/throughline/type-reference) |
+| Diagnose incorrect source or limits | [Errors and limits](/docs/throughline/errors-and-limits) |
+| Record my own algorithms with the public `tracer()` API | [Custom traces with TypeScript](/docs/throughline/custom-traces) |
+| Confirm supported versions and upgrade requirements | [Compatibility and upgrading](/docs/throughline/compatibility) |
+
+## Five supported domains
+
+All domains produce the same **version-1 Trace** shape, but accept different authoring syntax.
+
+| Domain | Model | Typical input |
+| --- | --- | --- |
+| `flow` | Nodes, links, focus, visibility, and explicit steps | `node counter "Counter" = 0` |
+| `bindings` | Primitives, variables, heap references, mutations | `let data = [1,2]` |
+| `binary` | Unsigned addition, one carry beat per bit | `a = 1011`, `b = 0110` |
+| `matrix` | Numeric multiplication, one beat per output cell | `A = [[1,2]]` |
+| `callstack` | Recursive factorial calls and returns | `fact 4` |
+
+Throughline does **not** execute JavaScript or Python written inside a code fence; the `bindings` language is deliberately restricted. There is no automatic interpreter, network call, remote backend, account, or grading system.
+
+## What happens behind the scenes?
+
+1. `compile` receives **one** `thl domain` source (or an extracted block using `compileAst`).
+2. The parser validates the syntax and builds a version-1 Program.
+3. The compiler applies named steps and produces a frame-zero initial snapshot and one snapshot per step.
+4. Your application can read frames or pass the Trace to `ThroughlinePlayer`.
+5. The player lays out visible state, builds accessible captions, and seeks through existing frames without recompilation.
+
+The source can live in TypeScript, Markdown, MDX, or another product’s content system. A Markdown host must still **recognize Throughline fences** to display the official interactive player; a plain Markdown renderer only displays the code. [Build a Markdown integration](/docs/throughline/markdown-mdx).
+
+## Customizing the visual player
+
+The optional stylesheet defines ten published `--thl-*` tokens for surface, text, borders, focus, and change states. Set `className` on the player and override the tokens directly on the `.thl` root. The player supports `theme="light"`, `"dark"`, or `"auto"`.
+
+Read the complete [CSS and theming reference](/docs/throughline/styling) for the exact variables, defaults in both schemes, specificity, responsive behavior, structural selectors, and examples of full customization. Read [React player](/docs/throughline/react-player) for all props, controls, keyboard shortcuts, accessibility, and optional sound.
+
+## Versions and compatibility
+
+This documentation targets `@0xbuff/throughline@0.0.2` (November 8, 2026). The two independent schema fields, `Program.version` and `Trace.version`, are both **`1`**. The package is ESM-only, ships TypeScript declarations, targets Node.js **24+**, and supports optional React 19 peers. See [Compatibility and upgrading](/docs/throughline/compatibility) for release notes and upgrade steps.
+
+For installation, authoring, styling, API integration, and troubleshooting, use the guides on this site. To report a bug in the package, use its [issue tracker](https://github.com/0xbuffdev/throughline/issues).
+
+<Callout type="info">
+  The core compiler is React-free and network-free. Only import `@0xbuff/throughline/react` and the CSS export when you need the bundled visual player.
+</Callout>
+

@@ -1,0 +1,53 @@
+---
+title: Call stack and recursion
+description: Understand factorial recursion through explicit call, return, and completion steps.
+---
+
+The `callstack` domain models a **single factorial recursion**. It shows how frames are pushed while calls descend, and how return values accumulate as the stack unwinds.
+
+## Input
+
+~~~md
+```thl callstack
+fact 4
+```
+~~~
+
+The input is exactly one non-comment statement: `fact <n>`, where n is an integer **from 1 through 6**. This is a factorial-specific adapter, not a JavaScript debugger or general call stack interpreter.
+
+## Walkthrough for factorial of four
+
+For `fact 4`, the trace contains:
+
+| Phase | Steps | What becomes visible |
+| --- | --- | --- |
+| Calls | `call fact(4)` through `call fact(1)` | Frames are filled; recursive call transfers run from caller toward callee |
+| Returns | `return fact(1)` through `return fact(4)` | Frames clear to `null`; `Returns` cells receive 1, 2, 6, and 24 |
+| Completion | `done` | The stack is empty; the note confirms `fact(4) = 24` |
+
+A trace with input n contains **n call beats + n return beats + one done beat**, plus the initial frame; total frames are `2n + 2`. For `fact 4`, that is **10 frames**.
+
+## Inspect it without React
+
+~~~ts
+import { compile } from "@0xbuff/throughline";
+
+const trace = compile("thl callstack\nfact 4");
+
+for (const frame of trace.frames) {
+  console.log(frame.index, frame.label);
+}
+~~~
+
+The compiler generates stable `slot1` through `slotN` entities in the **Call stack** lane, a `returns` array in the **Returns** lane, and directed `calls` / return relations. Earlier slots are not dynamically recreated as the call stack changes.
+
+## Key lesson
+
+Each recursive call needs to wait for a deeper call to produce a value. When `fact(1)` reaches the base case, returning one lets each waiting frame multiply the returned value by its own argument and return upward. The visualization shows both the descent and the unwind.
+
+## Scope
+
+- Only `fact n`, with n from 1 to 6, is accepted.
+- There is no support for arbitrary functions, multiple arguments, branching, recursion with side effects, or automatic source tracing.
+- General control-flow or recursion narratives can be expressed in [`flow`](/docs/throughline/flow).
+

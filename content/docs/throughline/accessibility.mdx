@@ -1,0 +1,67 @@
+---
+title: Accessibility and interaction
+description: Player keyboard support, screen-reader descriptions, captions, inspector, reduced motion, and sound.
+---
+
+Throughline does not rely on the visualization alone to communicate a trace. Its React player supplies semantic controls and textual summaries of each frame.
+
+## Screen-reader experience
+
+The outer player is a focusable group with the accessible name **Visualization player**. It contains a visually hidden `role="status"` paragraph describing the current frame. The SVG itself has `role="img"`, an accessible label built from `describeFrame`, and an `aria-describedby` link to the visible caption.
+
+Each frame summary names its step, changed values, focus targets, transfer events, and notes, where visible. A hidden entity is not included as an actively visible object in the scene or inspector. The expanded **Inspect state** section shows complete JSON values of visible entities.
+
+~~~ts
+import { compile, describeFrame } from "@0xbuff/throughline";
+
+const trace = compile([
+  "thl flow",
+  'node value "Value" = 3',
+  'step "Double"',
+  'set value = 6',
+  'note "The value has doubled."',
+].join("\n"));
+
+const line = describeFrame(trace.frames[1], trace.frames.length);
+console.log(line);
+// A deterministic, readable summary of the selected frame.
+~~~
+
+`describeFrame` is part of the **React-free root API**, so you can build alternative textual interfaces, captions, transcripts, or export formats without mounting the player.
+
+## Keyboard usage
+
+Move focus to the visualization group itself, then use **Left/Right arrows** to seek adjacent frames, **Home** and **End** for the first and last, and **Space** to toggle playback. The group deliberately ignores these shortcuts when a nested input, button, or select is focused, so native input behavior is preserved.
+
+Controls have accessible labels such as **Step back**, **Step forward**, **Timeline**, **Playback speed**, and **Sonify trace** (if enabled). The range input exposes its step position, and buttons are disabled when they cannot act.
+
+## Motion and timing
+
+- The player starts paused at the first frame.
+- The speed control offers 0.5×, 1×, and 2×; normal speed advances roughly every 1.5 seconds.
+- Manual seeking pauses playback.
+- The package’s CSS honors `prefers-reduced-motion: reduce` by disabling transfer-stroke animation.
+- Changing the `trace` object identity resets playback.
+
+A transfer’s animated line does not represent measured runtime latency. Likewise, note that sound and visual highlights convey **step progress**, not performance metrics.
+
+## Audio is strictly opt-in
+
+No audio control is rendered unless you supply the `sonification` prop. Even with that prop present, `enabled: false` starts silent. You may use the built-in tone or provide `onTone({ step, total, frequency, durationMs })` as a custom feedback hook.
+
+~~~tsx
+<ThroughlinePlayer trace={trace} sonification={{ enabled: false }} />
+~~~
+
+The browser may block audio until user interaction. Missing Web Audio support or a failing callback does not stop the visual player. If audio is irrelevant to your audience, omit `sonification` entirely.
+
+## Custom styles must preserve accessibility
+
+When overriding the package CSS, keep visible keyboard focus outlines, the `.thl-sr-only` status element's accessible semantics, native controls, captions, and meaningful contrast between text, focus, and change colors. If you replace all packaged CSS, you inherit responsibility for keyboard focus visibility, screen-reader-only utilities, control sizing, reduced motion, and responsive behavior.
+
+See [CSS and themes](/docs/throughline/styling) for every token and selector. See [React player](/docs/throughline/react-player) for props and playback behavior.
+
+## Limits of the built-in UI
+
+The player is designed to make traces inspectable; it does not provide grading, narration recording, author editing, arbitrary keyboard shortcut configuration, localization options, or a controlled external `currentStep` prop in v0.0.2. To build a custom UI, use the public `Trace` data and `describeFrame` to present accessible text and your own controls.
+

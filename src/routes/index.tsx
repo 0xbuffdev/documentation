@@ -7,7 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { baseOptions } from "~/lib/layout.shared";
 import { createPageMeta } from "~/lib/meta";
 import { ROUTES } from "~/lib/site";
-import tools from "~/lib/tools.generated.json";
+import { getDocumentedProducts, type DocumentedProduct } from "~/lib/catalog.server";
 import type { Route } from "./+types/index";
 
 const DOCS_META = {
@@ -24,7 +24,11 @@ export const meta: Route.MetaFunction = () => {
 	});
 };
 
-type ProductCardItem = (typeof tools)[number];
+export async function loader({ context }: Route.LoaderArgs) {
+	return { products: await getDocumentedProducts(context) };
+}
+
+type ProductCardItem = DocumentedProduct;
 
 function ProductBentoCard({ product }: { product: ProductCardItem }) {
 	const statusLabel = product.status;
@@ -84,7 +88,7 @@ function ProductBentoCard({ product }: { product: ProductCardItem }) {
 	);
 }
 
-export default function DocumentationLandingPage() {
+export default function DocumentationLandingPage({ loaderData }: Route.ComponentProps) {
 	return (
 		<HomeLayout {...baseOptions()}>
 			<div className="relative flex min-h-[calc(100dvh-3.5rem)] w-full flex-col bg-background text-foreground">
@@ -103,7 +107,7 @@ export default function DocumentationLandingPage() {
 						</div>
 
 						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-4">
-							{tools.map((product) => (
+							{loaderData.products.map((product) => (
 								<ProductBentoCard key={product.pid} product={product} />
 							))}
 						</div>

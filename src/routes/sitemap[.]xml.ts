@@ -1,12 +1,16 @@
 import { ROUTES, toSiteUrl } from "../lib/site";
+import { getDocumentedProducts } from "../lib/catalog.server";
+import type { Route } from "./+types/sitemap[.]xml";
 import { source } from "../lib/source";
 
-export function loader() {
-	const pages = source.getPages();
+export async function loader({ context }: Route.LoaderArgs) {
+	const products = await getDocumentedProducts(context);
+	const allowed = new Set(products.map((product) => product.slug));
+	const pages = source.getPages().filter((page) => allowed.has(page.slugs[0]));
 
 	const urls = [
 		{ loc: toSiteUrl(ROUTES.home), changefreq: "daily", priority: "1.0" },
-		{ loc: toSiteUrl(ROUTES.docs), changefreq: "daily", priority: "0.9" },
+		...(products.length ? [{ loc: toSiteUrl(ROUTES.docs), changefreq: "daily", priority: "0.9" }] : []),
 		{
 			loc: toSiteUrl(ROUTES.manifesto),
 			changefreq: "monthly",

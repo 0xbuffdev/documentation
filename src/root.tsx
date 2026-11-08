@@ -68,8 +68,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 		details = error.statusText || details;
 	} else if (error && error instanceof Error) {
 		console.error("ErrorBoundary caught error:", error);
-		details = error.message;
-		stack = error.stack;
+		message = "Server error";
+		if (import.meta.env.DEV) {
+			details = error.message;
+			stack = error.stack;
+		}
 	}
 
 	return (

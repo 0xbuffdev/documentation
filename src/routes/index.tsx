@@ -7,7 +7,8 @@ import { Badge } from "~/components/ui/badge";
 import { baseOptions } from "~/lib/layout.shared";
 import { createPageMeta } from "~/lib/meta";
 import { ROUTES } from "~/lib/site";
-import { getDocumentedProducts, type DocumentedProduct } from "~/lib/catalog.server";
+import { getDocumentedProducts } from "~/lib/catalog.server";
+import type { DocumentedProduct } from "~/lib/published-products";
 import type { Route } from "./+types/index";
 
 const DOCS_META = {

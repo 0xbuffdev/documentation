@@ -72,7 +72,7 @@ export async function getDocumentedProducts(
 		throw new Error("[documentation] R2 CONTENT binding is missing");
 	}
 
-	const environment = env.DOCS_ENV;
+	const environment = (env as Env & { DOCS_ENV?: string }).DOCS_ENV;
 	if (environment !== "development" && environment !== "staging" && environment !== "production") {
 		throw new Error("[documentation] invalid DOCS_ENV");
 	}
@@ -105,7 +105,7 @@ export async function getDocumentedProducts(
 			(item) =>
 				!item.url &&
 				/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.slug) &&
-				source.getPage([item.slug]) !== undefined,
+				source.getPage([item.slug]) != null,
 		)
 		.map(({ slug, pid, name, status, kicker, description }) => ({
 			slug,

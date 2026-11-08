@@ -1,5 +1,4 @@
 import docsConfig from "./docs-config.json";
-import tools from "./tools.generated.json";
 
 /**
  * Canonical site identity, navigation, and static-route metadata for the docs
@@ -60,7 +59,7 @@ export const ROUTES = {
 	home: "/",
 	docs: "/docs",
 	/** Default product shown when navigating to /docs. */
-	docsDefault: tools[0] ? `/docs/${tools[0].slug}` : "/",
+	docsDefault: "/docs",
 	manifesto: "/manifesto",
 	docsOg: docsConfig.docsImageRoute,
 	llms: "/llms.txt",
@@ -72,11 +71,7 @@ export const ROUTES = {
 
 /** Static application pages in addition to documentation pages discovered from MDX. */
 export const STATIC_PRERENDER_PATHS = [
-	ROUTES.home,
 	ROUTES.robots,
-	ROUTES.sitemap,
-	ROUTES.llms,
-	ROUTES.llmsFull,
 	ROUTES.searchIndex,
 	ROUTES.manifesto,
 ] as const;

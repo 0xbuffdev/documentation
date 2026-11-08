@@ -45,5 +45,10 @@ jobs:
       - name: Check generated production bindings
         run: node scripts/check-deploy-config.mjs production
 
-      - name: Report client bundle sizes
+      - name: Report production client bundle sizes
         run: pnpm bundle:report
+
+      - name: Build staging and verify isolated R2 binding
+        run: |
+          pnpm build:staging
+          node scripts/check-deploy-config.mjs staging

@@ -3,16 +3,51 @@
 	"name": "0xbuff-docs",
 	"main": "./workers/app.ts",
 	"compatibility_date": "2026-07-15",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"assets": {
 		"directory": "./build/client"
 	},
 	"observability": {
 		"enabled": true
 	},
-	"routes": [{ "pattern": "docs.0xbuff.com", "custom_domain": true }],
+	"routes": [
+		{
+			"pattern": "docs.0xbuff.com",
+			"custom_domain": true
+		}
+	],
 	"vars": {
 		"RESEND_SEGMENT_ID": "35f954a3-f5b7-4f40-8c61-032710a93bb3",
-		"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>"
+		"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>",
+		"DOCS_ENV": "production"
+	},
+	"r2_buckets": [
+		{
+			"binding": "CONTENT",
+			"bucket_name": "content"
+		}
+	],
+	"env": {
+		"staging": {
+			"routes": [
+				{
+					"pattern": "staging.docs.0xbuff.com",
+					"custom_domain": true
+				}
+			],
+			"vars": {
+				"DOCS_ENV": "staging",
+				"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>",
+				"RESEND_SEGMENT_ID": ""
+			},
+			"r2_buckets": [
+				{
+					"binding": "CONTENT",
+					"bucket_name": "content-staging"
+				}
+			]
+		}
 	}
 }

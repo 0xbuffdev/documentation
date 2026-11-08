@@ -79,4 +79,4 @@ Fumadocs MDX uses `async: true`, so individual documents are compiled into page-
 
 ## Worker types
 
-After changing the Wrangler bindings, regenerate type declarations with `pnpm exec wrangler types` from an installed checkout. The `CONTENT` R2 binding and `DOCS_ENV` are accessed server-side only, and no R2 credentials are shipped to the browser.
+`worker-configuration.d.ts` is generated locally by `wrangler types` and is intentionally **not tracked**. `pnpm typecheck` regenerates it before React Router types and the TypeScript compiler run; run `pnpm exec wrangler types` separately after changing bindings if editor types need refreshing. `opencode.json` is also ignored as machine-specific OpenCode configuration. The `CONTENT` R2 binding and `DOCS_ENV` are accessed server-side only, and no R2 credentials are shipped to the browser.

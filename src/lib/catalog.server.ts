@@ -67,7 +67,7 @@ export async function getDocumentedProducts(
 		throw new Error("[documentation] R2 CONTENT binding is missing");
 	}
 
-	const environment = (env as Env & { DOCS_ENV?: string }).DOCS_ENV;
+	const environment = (env as { DOCS_ENV?: string }).DOCS_ENV;
 	if (environment !== "development" && environment !== "staging" && environment !== "production") {
 		throw new Error("[documentation] invalid DOCS_ENV");
 	}

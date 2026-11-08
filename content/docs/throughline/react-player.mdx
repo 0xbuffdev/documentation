@@ -136,6 +136,8 @@ For custom feedback, supply an `onTone` handler. This replaces the built-in Web 
 
 The event contains a zero-based frame step, the total frame count, a frequency (approximately 261.63–523.25 Hz), and a standard duration of 180 ms. Sonification is **presentation feedback**, not a measure of runtime cost or contention. Audio failure does not stop visual playback.
 
+For **every CSS variable**, light/dark default, scoped theme override, advanced selector, responsive behavior, and troubleshooting, see the [complete CSS and theming reference](/docs/throughline/styling). For assistive-technology behavior, consult [Accessibility and interaction](/docs/throughline/accessibility).
+
 ## Server rendering
 
 Core compilation does not need a DOM. The React player is designed for SSR and hydration, with browser-only observers and audio invoked from effects. Your host must supply React 19 and a bundler capable of handling the explicit CSS import. For framework-specific server/client boundaries, render the player in the appropriate client component.

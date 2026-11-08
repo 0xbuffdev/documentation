@@ -105,6 +105,8 @@ Snapshots are detached from the input program and built using immutable value up
 - `trace.frames[n]` is a direct state lookup. Seeking does not replay earlier steps or rerun the authored source.
 - Declared but hidden entities remain in snapshots; they are simply omitted from the visible scene until shown. Hidden endpoints suppress attached visible links.
 
+For a deeper explanation of parsing, validation, scene layout, and replay behavior, see [Architecture and execution model](/docs/throughline/architecture).
+
 ## Package version versus trace schema
 
 The npm release here is **v0.0.2**. The `Program` and `Trace` schemas are **version 1**. The independent schema number is not an npm package version and is not a claim that every future package release will preserve all behavior.

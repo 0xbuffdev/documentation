@@ -1,23 +1,33 @@
 {
   "title": "Throughline",
-  "description": "Deterministic, Markdown-authored state traces",
+  "description": "Markdown-authored deterministic state traces",
   "root": true,
   "icon": "Play",
   "pages": [
     "index",
     "getting-started",
     "concepts",
-    "---Authoring traces---",
+    "---Authoring syntax---",
     "flow",
     "bindings",
     "binary",
     "matrix",
     "callstack",
-    "---Using the package---",
+    "recipes",
+    "---Player and appearance---",
     "react-player",
-    "programmatic-api",
+    "styling",
+    "accessibility",
+    "---Use in an application---",
+    "markdown-mdx",
+    "frameworks",
     "integrations",
+    "---API and internals---",
+    "programmatic-api",
+    "type-reference",
+    "architecture",
     "errors-and-limits",
-    "recipes"
+    "adding-domains",
+    "releases"
   ]
 }

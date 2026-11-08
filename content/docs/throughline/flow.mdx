@@ -114,6 +114,8 @@ step "Start call"
 
 A transfer along a hidden link or with a hidden endpoint is invalid. You may show the endpoints and link in the **same step** as a `send`, because the step's visibility writes are applied together. Conflicting visibility operations for one object inside a step are rejected.
 
+The parser does not run arithmetic expressions or functions: write finite JSON results explicitly, or generate a Program through [the public TypeScript tracer API](/docs/throughline/programmatic-api). For a complete listing of value, event, and target types see [Types and exports](/docs/throughline/type-reference).
+
 ## Authoring rules that improve clarity
 
 - Make each step communicate **one idea**. Split "read", "compute", and "write" when you want learners to observe the intermediate states.

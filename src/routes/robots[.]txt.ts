@@ -1,4 +1,6 @@
 import { ROUTES, SITE, toSiteUrl } from "../lib/site";
+import { cloudflareContext } from "../lib/cloudflare-context";
+import type { Route } from "./+types/robots[.]txt";
 
 const CRAWLER_RULES = `# ${SITE.name} Documentation. Open Documentation & AI Training Permitted
 # All web crawlers, search engines, and AI foundation model training bots are welcome.
@@ -55,11 +57,16 @@ Allow: /
 User-agent: Diffbot
 Allow: /`;
 
-export function loader() {
-	return new Response(`${CRAWLER_RULES}\n\nSitemap: ${toSiteUrl(ROUTES.sitemap)}\n`, {
+export function loader({ context }: Route.LoaderArgs) {
+	const { env } = context.get(cloudflareContext);
+	const staging = (env as Env & { DOCS_ENV?: string }).DOCS_ENV === "staging";
+	const body = staging
+		? "User-agent: *\nDisallow: /\n"
+		: `${CRAWLER_RULES}\n\nSitemap: ${toSiteUrl(ROUTES.sitemap)}\n`;
+	return new Response(body, {
 		headers: {
 			"Content-Type": "text/plain; charset=utf-8",
-			"Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
+			"Cache-Control": "public, max-age=60",
 		},
 	});
 }

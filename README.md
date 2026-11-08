@@ -1,51 +1,82 @@
 # 0xBUFF Documentation
 
-The documentation site is built with React Router and Fumadocs and deployed to Cloudflare Workers. Documentation is authored in `content/docs/`; Fumadocs generates the page tree, search index, sitemap, and LLM exports from that content.
+Public documentation for 0xBUFF products, built with React Router 8, Fumadocs MDX and Cloudflare Workers. Articles are maintained in `content/docs/`; the published **product catalog** is read at runtime from the private 0xBUFF R2 content bucket. The documentation Worker does not access 0xNAND's private learning content or assessment assets.
+
+## Content ownership and publication
+
+The private `0xbuffdev/content` repository owns the product records and publishes them to independent 0xBUFF buckets via its validated content pipeline. Documentation reads `manifest.json` and the referenced `products/manifest.json` through its Worker `CONTENT` R2 binding and validates them with `@0xbuffdev/content-contract@0.1.0` (imported as `@0xbuff/content-contract`).
+
+Only published product records with **no outbound `url`** and a matching `content/docs/<slug>/index.mdx` are listed. The R2 catalog controls the homepage, documentation routes, sidebar, sitemap, search index and LLM exports. The MDX articles themselves are compiled from this repository and require a documentation deployment to update. Catalog changes appear after the 60-second edge cache expires; no documentation rebuild is needed for catalog changes alone.
+
+The two production-facing buckets are **not interchangeable**:
+
+| Target | Worker | Public domain | Private `CONTENT` bucket |
+| --- | --- | --- | --- |
+| Staging | `0xbuff-docs-staging` | `staging.docs.0xbuff.com` | `content-staging` |
+| Production | `0xbuff-docs` | `docs.0xbuff.com` | `content` |
+
+The top-level Wrangler configuration is production. `env.staging` overrides the domain, bucket, and `DOCS_ENV` binding. `DOCS_ENV` also isolates cached manifests.
 
 ## Development
 
+Node 22 and pnpm 11.2.2 are required.
+
 ```bash
 pnpm install
-pnpm dev
 pnpm typecheck
+pnpm test
 ```
 
-Only cataloged products have documentation published on this site; there is nothing else to discover via search or the sitemap.
+GitHub Packages read permission is required for the private content contract. The tracked `.npmrc` scopes the registry; supply an appropriate read-only `NODE_AUTH_TOKEN` locally. **Never commit a token.** GitHub Actions uses `GITHUB_TOKEN` with `packages: read`; grant this repository Actions read permission in the private package's settings.
 
-The homepage catalog and docs sidebar use the committed `src/lib/tools.generated.json`. Every build relies on that file as is; it never fetches the content repository, so CI installs and builds with no private-repo access. Update it deliberately with `pnpm sync:tools`: the script reads product frontmatter from the content repository, validates it against the product contract (vendored at `scripts/lib/content-contract.mjs` while the contract lives in the private repo), and includes records without a destination URL only when a matching `content/docs/<slug>/index.mdx` exists.
+For local development, build and partition the **Content** repository first (from that repository):
 
-By default the sync script fetches the commit pinned in the vendored contract, so refreshing needs Git access to `0xbuffdev/content` (works locally; not in CI). To develop against a local checkout, set `CONTENT_REPO_PATH` to its absolute path; that override reads the checkout's working tree. Update `CONTENT_REVISION` in `scripts/lib/content-contract.mjs` to publish a newer catalog. Content changes require a documentation rebuild to appear.
+```bash
+pnpm run build:content
+node scripts/publish-targets.ts
+```
 
-## Build and deploy
+From this documentation repository, seed only the **local** Miniflare R2 state using the resulting 0xBUFF partition:
+
+```bash
+pnpm seed:content /absolute/path/to/content/.cache/publish/0xbuff
+pnpm dev
+```
+
+The seed command validates the published manifest and uploads `manifest.json` and `products/manifest.json` to the local `content` bucket with Wrangler `--local`. It never writes to remote R2. Re-seed after changing local product metadata. Set local `RESEND_API_KEY` in an untracked `.dev.vars` only when newsletter testing is necessary; `.dev.vars.example` documents it.
+
+## Build and deployment
 
 ```bash
 pnpm build
-pnpm exec vite preview
+pnpm bundle:report
+pnpm build:staging
 ```
 
-CI (`.github/workflows/`) deploys on merge; no manual deploy is required.
+- `pnpm build`: production target, using top-level Wrangler settings.
+- `pnpm build:staging`: selects `env.staging` with `CLOUDFLARE_ENV=staging` **during the Vite build**.
+- `pnpm bundle:report`: prints compressed JS/CSS asset sizes, largest first. The sum of all chunks is **not** the initial browser download; route-level MDX and Mermaid remain lazy, and the search dialog is deferred.
+- `scripts/check-deploy-config.mjs staging|production`: asserts the generated `build/server/wrangler.json` carries the intended Worker name, custom domain, runtime environment, and R2 bucket.
 
-- `staging` branch → `pnpm exec wrangler deploy -c build/server/wrangler.staging.json`
-  deploys Worker `0xbuff-docs-staging` at `https://staging.docs.0xbuff.com`. The
-  staging config is derived from the build output by `scripts/stage-deploy.mjs`:
-  the `@cloudflare/vite-plugin` emits a redirected deploy config that ignores
-  Wrangler `--env` overrides, so staging cannot be expressed as a Wrangler
-  environment. It reuses the production newsletter vars; point
-  `RESEND_SEGMENT_ID` at a test segment (in `scripts/stage-deploy.mjs`) before
-  testing live mail.
-- `main` branch → `wrangler deploy` publishes production at
-  `https://docs.0xbuff.com`.
+With the Cloudflare Vite plugin, `wrangler deploy` uses the generated deployment config; `wrangler deploy --env staging` **must not** be used after the build.
 
-Both need repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
-The token requires Workers Scripts edit plus Zone Settings and DNS edit for the
-`0xbuff.com` zone (custom-domain routes). Worker secrets are set once per
-environment from an authenticated shell, never in the repo:
+Code merges do **not** deploy to Cloudflare. The deployment workflow follows 0xNAND's explicit release boundary:
 
-```bash
-pnpm exec wrangler secret put RESEND_API_KEY # production
-pnpm exec wrangler secret put RESEND_API_KEY -c build/server/wrangler.staging.json # staging
-```
+1. Merge the reviewed and signed code into `main` after CI passes. This alone does not deploy either environment.
+2. Set up GitHub Environments named `staging` and `production`. Verify each environment's R2 content, domain, credentials, and Worker secrets. Set environment variable `DOCS_RELEASE_READY=true` **only after** verifying that environment.
+3. Run **Actions → Deploy Documentation → Run workflow** from the `main` branch, choose `staging`, and enter `DEPLOY_STAGING`. The workflow checks readiness, builds the staging environment, confirms the generated binding, deploys, and probes the live endpoints.
+4. Once staging is verified, dispatch the same workflow from `main` targeting `production` with `DEPLOY_PRODUCTION` and a separately verified production environment (`DOCS_RELEASE_READY=true`).
 
-For local development, copy `.dev.vars.example` to `.dev.vars` and set the key.
-Non-secret newsletter configuration is in `wrangler.jsonc`. Regenerate Worker
-types with `pnpm exec wrangler types` after changing bindings.
+Pull requests continue to typecheck, test, build **both** target configurations, verify the generated R2 bindings and report client asset sizes without deploying.
+
+Cloudflare deployment requires repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` with the minimum permissions for Workers and the configured custom domains. Newsletter `RESEND_API_KEY` is a **Worker secret**, set independently for the production and staging Workers. The staging `RESEND_SEGMENT_ID` is intentionally empty to prevent accidental subscriptions to the production audience; configure a separate staging segment before testing signup delivery.
+
+Before either deployment, independently confirm the relevant R2 bucket exists, contains a valid `manifest.json` and `products/manifest.json`, is accessible to that Worker's `CONTENT` binding, and that Cloudflare domains and credentials are provisioned. CI cannot create or verify those Cloudflare resources by reading the repository. The deployment smoke tests request the homepage and `/docs` to check real R2 access, plus the LLM, search, robots, sitemap and subscription routes. Staging serves `robots.txt` with `Disallow: /` and sets `X-Robots-Tag: noindex, nofollow, noarchive` on Worker responses.
+
+## Bundle strategy
+
+Fumadocs MDX uses `async: true`, so individual documents are compiled into page-level lazy chunks. Mermaid loads through a dynamic import when a diagram mounts. The search UI is also loaded on demand; the content search index is fetched from the same R2-authorized product set and cached briefly. The bundle report provides reproducible size evidence in pull-request and deploy workflows. Compare it with a browser network waterfall before claiming any percentage reduction in initial transfer or setting budgets.
+
+## Worker types
+
+After changing the Wrangler bindings, regenerate type declarations with `pnpm exec wrangler types` from an installed checkout. The `CONTENT` R2 binding and `DOCS_ENV` are accessed server-side only, and no R2 credentials are shipped to the browser.

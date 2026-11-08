@@ -1,12 +1,17 @@
 import { generate as DefaultImage } from "fumadocs-ui/og/takumi";
 import { ImageResponse } from "takumi-js/response";
 import { SITE } from "../../../lib/site";
+import { getDocumentedProducts } from "../../../lib/catalog.server";
 import { resolveDocPage } from "../../../lib/source";
 import type { Route } from "./+types/$";
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, context }: Route.LoaderArgs) {
 	const rawSlug = (params as Record<string, string | undefined>)["*"] || "";
 	const { page } = resolveDocPage(rawSlug, { stripTrailingImage: true });
+	const published = await getDocumentedProducts(context);
+	if (!published.some(({ slug }) => slug === page.slugs[0])) {
+		throw new Response("Not found", { status: 404 });
+	}
 
 	return new ImageResponse(
 		<DefaultImage

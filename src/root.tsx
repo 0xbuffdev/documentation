@@ -10,7 +10,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import SearchDialog from "fumadocs-ui/components/dialog/search-default";
+import { DeferredSearchDialog } from "./components/deferred-search-dialog";
 import { NotFoundPage } from "./components/not-found";
 import { ROUTES, SITE } from "./lib/site";
 
@@ -37,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<body>
 				<RootProvider
 					search={{
-						SearchDialog,
+						SearchDialog: DeferredSearchDialog,
 						options: { type: "static", api: ROUTES.searchIndex },
 					}}
 				>
@@ -68,8 +68,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 		details = error.statusText || details;
 	} else if (error && error instanceof Error) {
 		console.error("ErrorBoundary caught error:", error);
-		details = error.message;
-		stack = error.stack;
+		message = "Server error";
+		if (import.meta.env.DEV) {
+			details = error.message;
+			stack = error.stack;
+		}
 	}
 
 	return (

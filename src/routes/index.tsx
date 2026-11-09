@@ -6,15 +6,14 @@ import { CELL_SHEEN, PatternZone } from "~/components/pattern-zone";
 import { Badge } from "~/components/ui/badge";
 import { baseOptions } from "~/lib/layout.shared";
 import { createPageMeta } from "~/lib/meta";
-import { ROUTES } from "~/lib/site";
+import { ROUTES, SITE } from "~/lib/site";
 import { getDocumentedProducts } from "~/lib/catalog.server";
 import type { DocumentedProduct } from "~/lib/published-products";
 import type { Route } from "./+types/index";
 
 const DOCS_META = {
   title: "Documentation",
-  description:
-    "Explore guides, technical references, and implementation details for 0xBUFF products and tools.",
+  description: SITE.description,
 } as const;
 
 export const meta: Route.MetaFunction = () => {

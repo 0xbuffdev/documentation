@@ -2,6 +2,31 @@
 
 Public documentation for 0xBUFF products, built with React Router 8, Fumadocs MDX and Cloudflare Workers. Articles are maintained in `content/docs/`; the published **product catalog** is read at runtime from the private 0xBUFF R2 content bucket. The documentation Worker does not access 0xNAND's private learning content or assessment assets.
 
+## Documentation organization
+
+Fumadocs owns the documentation navigation. The repository is organized by tool, not by individual feature:
+
+```text
+content/docs/
+├── meta.json                  # Shared tool order
+├── throughline/
+│   ├── meta.json              # Throughline navigation
+│   ├── index.mdx              # Tool overview
+│   └── *.mdx                  # Guides and references
+└── <new-tool>/
+    ├── meta.json
+    ├── index.mdx
+    └── *.mdx
+```
+
+- The root `content/docs/meta.json` lists Throughline first and uses Fumadocs' `"..."` entry to include future tools automatically.
+- Give every tool its own `content/docs/<slug>/` directory with an `index.mdx` and `meta.json`. Set `"root": true` in the tool's metadata so its navigation is separate from other tools. Give it a clear title, a short description, and an explicit `pages` order. Section separators such as `"---Reference---"` group related pages without changing URLs.
+- Use stable filenames: Fumadocs derives each public address from its MDX path. Navigation changes must not unnecessarily change existing addresses.
+- New tools also need a published product entry in the R2 catalog, with no outbound `url`, before they appear on the public site. Content files alone do not publish a product.
+- Keep product-specific descriptions in the product's own MDX and metadata. Shared site metadata must describe the full documentation library.
+
+The navigation validation tests run with `pnpm test`. They verify tool roots, declared pages, and document frontmatter.
+
 ## Content ownership and publication
 
 The private `0xbuffdev/content` repository owns the product records and publishes them to independent 0xBUFF buckets via its validated content pipeline. Documentation reads `manifest.json` and the referenced `products/manifest.json` through its Worker `CONTENT` R2 binding and validates them with `@0xbuffdev/content-contract@0.1.0` (imported as `@0xbuff/content-contract`).

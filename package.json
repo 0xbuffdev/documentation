@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"description": "Guides and API references for 0xBUFF tools, served from docs.0xbuff.com.",
+	"description": "Guides, examples, and API references for 0xBUFF tools.",
 	"homepage": "https://docs.0xbuff.com/",
 	"repository": {
 		"type": "git",

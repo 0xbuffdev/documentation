@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"description": "0xBUFF documentation — guides and references for Throughline, served from docs.0xbuff.com.",
+	"description": "Guides and API references for 0xBUFF tools, served from docs.0xbuff.com.",
 	"homepage": "https://docs.0xbuff.com/",
 	"repository": {
 		"type": "git",

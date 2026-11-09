@@ -27,6 +27,12 @@ content/docs/
 
 The navigation validation tests run with `pnpm test`. They verify tool roots, declared pages, and document frontmatter.
 
+## Interactive Throughline examples
+
+Selected Throughline guides render the published `@0xbuff/throughline@0.0.2` React player. Sources are kept in `src/lib/throughline-demos.ts`; MDX pages use `<ThroughlineDemo id="..." />`. The component is registered in `src/components/mdx.tsx`. Its compiler, player and namespaced CSS load in a separate module only when a demo is rendered. All other 0xBUFF tool documentation remains independent of Throughline.
+
+The showcase is deliberately limited to a few pages and does not automatically transform every `thl` code fence. This preserves portable source examples and avoids unnecessary client JavaScript. `scripts/throughline-interactive.test.mjs` compiles every showcased trace with the installed package; CI also typechecks and builds both environments.
+
 ## Content ownership and publication
 
 The private `0xbuffdev/content` repository owns the product records and publishes them to independent 0xBUFF buckets via its validated content pipeline. Documentation reads `manifest.json` and the referenced `products/manifest.json` through its Worker `CONTENT` R2 binding and validates them with `@0xbuffdev/content-contract@0.1.0` (imported as `@0xbuff/content-contract`).
@@ -44,7 +50,7 @@ The top-level Wrangler configuration is production. `env.staging` overrides the 
 
 ## Development
 
-Node 22 and pnpm 11.2.2 are required.
+Node 24 and pnpm 11.2.2 are required.
 
 ```bash
 pnpm install

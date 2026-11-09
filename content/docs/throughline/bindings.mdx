@@ -27,6 +27,10 @@ This produces four authored beats plus the initial frame:
 
 Heap nodes and reference edges are predeclared hidden and revealed as needed. Previous references are hidden when rebinding changes the pointer, but old objects remain available for other aliases.
 
+<ThroughlineDemo id="references" />
+
+Follow the links in each frame: after the push, both names still point to the same array. The final assignment moves only the `alias` reference.
+
 ## Accepted statements
 
 | Statement | Description |

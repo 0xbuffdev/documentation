@@ -7,6 +7,7 @@ import { TypeTable } from "fumadocs-ui/components/type-table";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
 import { Mermaid } from "./mermaid";
+import { ThroughlineDemo } from "./throughline-demo";
 
 export function getMDXComponents(components?: MDXComponents) {
 	return {
@@ -18,6 +19,7 @@ export function getMDXComponents(components?: MDXComponents) {
 		Files,
 		Folder,
 		Mermaid,
+		ThroughlineDemo,
 		Step,
 		Steps,
 		Tab,

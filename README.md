@@ -44,7 +44,7 @@ The top-level Wrangler configuration is production. `env.staging` overrides the 
 
 ## Development
 
-Node 22 and pnpm 11.2.2 are required.
+Node 24 and pnpm 11.2.2 are required.
 
 ```bash
 pnpm install

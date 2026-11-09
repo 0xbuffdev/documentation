@@ -29,9 +29,9 @@ The navigation validation tests run with `pnpm test`. They verify tool roots, de
 
 ## Interactive Throughline examples
 
-Selected Throughline guides render the published `@0xbuff/throughline@0.0.2` React player. Sources are kept in `src/lib/throughline-demos.ts`; MDX pages use `<ThroughlineDemo id="..." />`. The component is registered in `src/components/mdx.tsx`. Its compiler, player and namespaced CSS load in a separate module only when a demo is rendered. All other 0xBUFF tool documentation remains independent of Throughline.
+Selected Throughline guides render the published `@0xbuff/throughline@0.0.2` React player. The overview leads with a multi-system checkout recovery trace; introductory pages retain smaller teaching examples. Sources are kept in `src/lib/throughline-demos.ts`; MDX pages use `<ThroughlineDemo id="..." />`. The component is registered in `src/components/mdx.tsx`. Its compiler, player and namespaced CSS load in a separate module only when a demo is rendered. All other 0xBUFF tool documentation remains independent of Throughline.
 
-The showcase is deliberately limited to a few pages and does not automatically transform every `thl` code fence. This preserves portable source examples and avoids unnecessary client JavaScript. `scripts/throughline-interactive.test.mjs` compiles every showcased trace with the installed package; CI also typechecks and builds both environments.
+The showcase is deliberately limited to a few pages and does not automatically transform every `thl` code fence. The official `remarkThroughline({ mode: "mdx" })` integration and `ThroughlineEmbed` require a subsequent package release; v0.0.2 must not be assumed to contain them. This preserves portable source examples and avoids unnecessary client JavaScript. `scripts/throughline-interactive.test.mjs` compiles every showcased trace with the installed package; CI also typechecks and builds both environments.
 
 ## Content ownership and publication
 

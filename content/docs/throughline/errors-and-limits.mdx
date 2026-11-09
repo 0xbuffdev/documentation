@@ -1,6 +1,6 @@
 ---
-title: Errors and limits
-description: Diagnose malformed sources, invalid events, conflicting writes, and bounded compilation failures.
+title: Troubleshooting and limits
+description: Understand input errors, validation failures, and compilation limits.
 ---
 
 Throughline validates authored and generated programs before returning snapshots. It throws `ProgramError` for known compilation failures. The package intentionally rejects invalid or unbounded input instead of attempting to recover silently.

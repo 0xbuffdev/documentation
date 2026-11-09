@@ -16,7 +16,7 @@ export const SITE = {
 	wordmark: { prefix: BRAND_PREFIX, accent: BRAND_ACCENT },
 	title: "Tools to build with. Mastery to build well.",
 	description:
-		"Documentation for Throughline, the interactive step-player for learning and teaching complex systems, from 0xBUFF.",
+		"Guides, examples, and API references for 0xBUFF tools.",
 	companyUrl: "https://0xbuff.com",
 	docsUrl: "https://docs.0xbuff.com",
 	githubUrl: "https://github.com/0xbuffdev/documentation",

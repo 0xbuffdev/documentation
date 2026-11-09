@@ -1,10 +1,10 @@
 ---
 title: Throughline
-description: Complete documentation for authoring, compiling, rendering, styling, and integrating deterministic state traces.
+description: Create step-by-step visualizations with Throughline. Find setup guides, examples, and API references.
 icon: Play
 ---
 
-**Throughline** turns human-readable state changes into deterministic, inspectable snapshots. You can author a `thl` block in Markdown, compile it to a structured `Trace` with pure TypeScript, and optionally play it as a responsive, accessible SVG visualization in React 19.
+**Throughline** shows how values and systems change, one step at a time. Write a `thl` block in Markdown, compile it into a series of state snapshots, and inspect the result or display it with the optional React player.
 
 These pages document the **published v0.0.2 API** in full. You should not need to leave the documentation site to discover supported syntax, player props, program types, CSS customization, Markdown/MDX authoring, or how to integrate Throughline into another product.
 
@@ -47,7 +47,7 @@ This produces an initial frame with `counter = 0` and a second frame with `count
 | --- | --- |
 | Install and compile my first trace | [Getting started](/docs/throughline/getting-started) |
 | Understand the runtime and snapshot model | [Core concepts](/docs/throughline/concepts) and [Architecture](/docs/throughline/architecture) |
-| Create custom algorithm or workflow steps | [Flow authoring](/docs/throughline/flow) and [Recipes](/docs/throughline/recipes) |
+| Create custom algorithm or workflow steps | [Create flow visualizations](/docs/throughline/flow) and [Recipes](/docs/throughline/recipes) |
 | Show assignments, copies, aliases, and heap mutation | [Bindings domain](/docs/throughline/bindings) |
 | Demonstrate ripple-carry addition | [Binary domain](/docs/throughline/binary) |
 | Work through matrix multiplication | [Matrix domain](/docs/throughline/matrix) |
@@ -56,11 +56,11 @@ This produces an initial frame with `counter = 0` and a second frame with `count
 | Rebrand colors, borders, controls, and themes | [CSS and themes](/docs/throughline/styling) |
 | Support screen readers and keyboard interaction | [Accessibility](/docs/throughline/accessibility) |
 | Use trace code fences inside Markdown or MDX | [Markdown and MDX](/docs/throughline/markdown-mdx) |
-| Integrate in Next.js, Astro, Fumadocs, Vite, or a Node build | [Other frameworks and products](/docs/throughline/frameworks) |
-| Use every public compiler and tracer function | [Programmatic API](/docs/throughline/programmatic-api) |
-| Look up a precise TypeScript shape or event | [Types and exports](/docs/throughline/type-reference) |
+| Integrate in Next.js, Astro, Fumadocs, Vite, or a Node build | [Framework support](/docs/throughline/frameworks) |
+| Use every public compiler and tracer function | [API reference](/docs/throughline/programmatic-api) |
+| Look up a precise TypeScript shape or event | [Type reference](/docs/throughline/type-reference) |
 | Diagnose incorrect source or limits | [Errors and limits](/docs/throughline/errors-and-limits) |
-| Record my own algorithms with the public `tracer()` API | [Custom traces with TypeScript](/docs/throughline/custom-traces) |
+| Record my own algorithms with the public `tracer()` API | [TypeScript visualizations](/docs/throughline/custom-traces) |
 | Confirm supported versions and upgrade requirements | [Compatibility and upgrading](/docs/throughline/compatibility) |
 
 ## Five supported domains

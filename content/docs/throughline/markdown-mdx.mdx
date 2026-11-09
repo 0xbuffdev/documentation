@@ -1,60 +1,37 @@
 ---
-title: Markdown and MDX integration
-description: Write thl fences in Markdown, validate them with a remark plugin, and render interactive players in MDX and Fumadocs.
+title: Markdown and MDX
+description: Validate Throughline code blocks and show interactive traces in Markdown-based content.
 ---
 
-Throughline is **authored in Markdown syntax**, but it is not itself a Markdown renderer. It compiles **one `thl <domain>` block at a time** into a `Trace`. To show an interactive visualization in an article, the website or content pipeline must extract or recognize those blocks and connect them to a rendering component.
+Throughline compiles **one `thl` block at a time**. Your Markdown or MDX host must recognize those blocks and decide how to render them. Without an integration, a `thl` fence remains a normal code block.
 
-This guide includes a minimal MDX component, a concrete Fumadocs setup, and an automatic remark integration.
-
-## 1. Author a Throughline code fence
+## Write a trace in Markdown
 
 ~~~md
-# Array mutation
-
-Two names can refer to the same array:
+Two variables can refer to the same array:
 
 ```thl bindings
 let items = [1, 2]
 let alias = items
 alias.push(3)
 ```
-
-After the final step, both names still point to the same array.
 ~~~
 
-The first word of the Markdown fence's info string is `thl`; the second word is the Throughline domain (`bindings`, in this case). The other supported domains are `flow`, `binary`, `matrix`, and `callstack`. Extra header options are not accepted by the v0.0.2 parser.
+The fence name is `thl`, followed by one of `flow`, `bindings`, `binary`, `matrix`, or `callstack`. No other header options are supported in v0.0.2.
 
-Plain Markdown storage and rendering are separate: a Markdown reader that does not implement Throughline will show this as a code block. It does not automatically render an SVG.
-
-## 2. Compile a single fenced block
-
-If you already have the fenced block as a string, compile it directly:
+You can compile the extracted fence directly:
 
 ~~~ts
 import { compile } from "@0xbuff/throughline";
 
-const source = [
-  "```thl binary",
-  "a = 1011",
-  "b = 0110",
-  "```",
-].join("\n");
-
-const trace = compile(source);
-~~~
-
-An equivalent **bare-header** string is supported:
-
-~~~ts
 const trace = compile("thl binary\na = 1011\nb = 0110");
 ~~~
 
-Both produce the same domain program. **Do not pass the entire Markdown article** to `compile`. Text after a fenced block's closing fence is an error; when no `thl` header is present, `parseThl` returns `null` and `compile` raises `ProgramError`.
+Do **not** pass an entire Markdown document to `compile()`. The host's Markdown parser should identify its code blocks.
 
-## 3. Render a source-and-player MDX component
+## Render an MDX component
 
-A straightforward implementation works in any React 19 MDX host:
+For a React 19 MDX host, create a component that accepts one trace source:
 
 ~~~tsx
 // ThroughlineExample.tsx
@@ -63,22 +40,18 @@ import { compile } from "@0xbuff/throughline";
 import { ThroughlinePlayer } from "@0xbuff/throughline/react";
 import "@0xbuff/throughline/styles/throughline.css";
 
-type Props = { source: string };
-
-export function ThroughlineExample({ source }: Props) {
-  // UseMemo keeps the trace identity stable while the source stays the same.
+export function ThroughlineExample({ source }: { source: string }) {
   const trace = useMemo(() => compile(source), [source]);
-
   return (
-    <figure className="throughline-example">
+    <figure>
       <pre><code>{source}</code></pre>
-      <ThroughlinePlayer trace={trace} theme="auto" />
+      <ThroughlinePlayer trace={trace} />
     </figure>
   );
 }
 ~~~
 
-Use it in an MDX article after registering the component with the MDX runtime:
+Register it with your MDX component map, then use it in a page:
 
 ~~~mdx
 <ThroughlineExample
@@ -86,19 +59,17 @@ Use it in an MDX article after registering the component with the MDX runtime:
 />
 ~~~
 
-This is the **smallest working integration**. It compiles when the component renders and includes the compiler in the relevant client bundle. A production authoring system should validate sources at build time and handle `ProgramError` rather than allowing invalid source to crash a page.
+This example assumes valid source. For production content, compile during the build to catch errors before users open the page. For interactive input, handle `ProgramError` in the host rather than letting invalid input break rendering.
 
-To avoid importing the CSS in every individual component, move the stylesheet import into the application's root entry point.
+## Register it with Fumadocs
 
-## 4. Fumadocs: register the MDX component
-
-Fumadocs uses an MDX component map. In a React Router + Fumadocs documentation application, add your component to the map used to render docs pages:
+If you use Fumadocs, add the component to the map supplied when rendering MDX pages. Keep any existing components in the map:
 
 ~~~tsx
-// src/components/mdx.tsx — illustrative integration
+// src/components/mdx.tsx
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import type { MDXComponents } from "mdx/types";
-import { ThroughlineExample } from "./throughline-example";
+import { ThroughlineExample } from "./ThroughlineExample";
 
 export function getMDXComponents(components?: MDXComponents) {
   return {
@@ -109,11 +80,11 @@ export function getMDXComponents(components?: MDXComponents) {
 }
 ~~~
 
-Keep your existing Fumadocs components (Callout, Tabs, Accordion, etc.) in the map; add `ThroughlineExample` without replacing them. Ensure the docs route passes the map to the compiled MDX body, as it already does for other custom components.
+This registers the component; it does **not** turn every fenced `thl` block into a player.
 
-## 5. Fumadocs: automatically validate `thl` fences
+## Validate fences during the MDX build
 
-A remark plugin can validate embedded examples **during the MDX build**. When the host's Markdown parser has already separated the code node's info string and body, use `compileAst` to retain the true document line positions:
+A remark plugin can find `thl` code nodes and validate them with source positions. This example assumes the host's parser puts the domain in `node.meta`.
 
 ~~~ts
 // remark-validate-throughline.ts
@@ -125,12 +96,10 @@ export function remarkValidateThroughline() {
   return (tree: Root) => {
     visit(tree, "code", (node) => {
       if (node.lang !== "thl") return;
-
       const domain = node.meta?.trim();
       if (!domain) {
-        throw new Error("Throughline fence needs a domain: thl flow, thl binary, etc.");
+        throw new Error("Expected a Throughline domain, for example: thl flow");
       }
-
       compileAst({
         kind: domain,
         lines: node.value.split(/\r\n?|\n/),
@@ -143,18 +112,18 @@ export function remarkValidateThroughline() {
 }
 ~~~
 
-Install the Markdown visitor and types if they are not already present in your project:
+Install the remark visitor and types if needed:
 
 ~~~sh
 npm install -D unist-util-visit @types/mdast
 ~~~
 
-Then add the plugin to the Fumadocs MDX remark pipeline while preserving your other Markdown plugins:
+Then register the validator in your existing Fumadocs MDX options; **preserve the other plugins**:
 
 ~~~ts
-// source.config.ts — add alongside existing plugins
+// source.config.ts (illustrative)
 import { defineConfig } from "fumadocs-mdx/config";
-import { remarkValidateThroughline } from "./src/lib/remark-validate-throughline";
+import { remarkValidateThroughline } from "./remark-validate-throughline";
 
 export default defineConfig({
   mdxOptions: {
@@ -163,87 +132,12 @@ export default defineConfig({
 });
 ~~~
 
-Do not replace existing math, Mermaid, or other plugins when applying this change to an existing application. The validator does not itself create a player: it only rejects malformed authored traces before publication.
+The plugin validates content but does not render it. To automatically render every `thl` fence, add an MDX AST transform that replaces validated code nodes with `ThroughlineExample` elements. Keep the literal source available in Markdown exports and copy controls. Depending on the host pipeline, syntax highlighting may consume code nodes first, so register the transform before that stage.
 
-## 6. Make every `thl` fence render automatically
+A build-time optimization can serialize precompiled `Trace` data instead of compiling inside the React component. That requires host-specific content plumbing; it is not a built-in Throughline feature.
 
-For **source followed by a preview without duplicating content**, add a second behavior to the remark plugin:
+## Plain Markdown and publishing
 
-1. Recognize code nodes with `lang === "thl"`.
-2. Read exactly one supported domain from `node.meta`.
-3. Validate via `compileAst` with the original `node.position.start.line`.
-4. Replace the code node with an MDX JSX node referencing `ThroughlineExample`, passing `source: "thl <domain>\n<body>"`.
-5. Register `ThroughlineExample` in the MDX component map; ensure the component renders both the source and player.
+In a non-MDX site, your Markdown renderer must explicitly recognize `thl` fences and mount a visualization. A plain Markdown file cannot run JSX.
 
-A minimal AST replacement after validation looks like this (requires MDX JSX nodes in the host's Markdown AST):
-
-~~~ts
-import { visit } from "unist-util-visit";
-import type { Root } from "mdast";
-import { compileAst } from "@0xbuff/throughline";
-
-export function remarkThroughlinePreview() {
-  return (tree: Root) => {
-    visit(tree, "code", (node, index, parent) => {
-      if (node.lang !== "thl" || index === undefined || !parent) return;
-
-      const domain = node.meta?.trim() ?? "";
-      if (!domain) throw new Error("Throughline domain is required.");
-
-      const source = `thl ${domain}\n${node.value}`;
-      compileAst({
-        kind: domain,
-        lines: node.value.split(/\r\n?|\n/),
-        source: node.position?.start.line
-          ? { line: node.position.start.line }
-          : undefined,
-      });
-
-      parent.children[index] = {
-        type: "mdxJsxFlowElement",
-        name: "ThroughlineExample",
-        attributes: [
-          { type: "mdxJsxAttribute", name: "source", value: source },
-        ],
-        children: [],
-        position: node.position,
-      } as (typeof parent.children)[number];
-    });
-  };
-}
-~~~
-
-This approach uses the same source for display and compilation. Ensure the host supports MDX JSX AST extensions and run its typecheck/build after adding the transform. The runtime component above still compiles client-side; the remark pass **validates at build time**. To eliminate client-side compilation entirely, precompile the Trace during the build and serialize that trace into a generated data module, then make the player component accept `trace` instead of `source`. That is an optional host optimization—not a Throughline package feature.
-
-### Host integration caution
-
-Fumadocs documentation sites may preprocess `code` nodes for syntax highlighting. Install the Throughline remark transformer **before** the highlighter consumes those nodes. Once transformed, the original code block will no longer be highlighted automatically; add source highlighting to `ThroughlineExample` if needed, or use the normal code-block renderer for its source half. Ensure the Markdown/LLM export pipeline retains the literal source so readers and tools can copy it.
-
-## 7. Use with ordinary Markdown (not MDX)
-
-A `.md` file cannot execute JSX by itself. To display visualizations, your Markdown renderer must recognize `thl` fences and mount a player next to the code. The content remains portable: unsupported renderers show the code, while integrated applications provide the visualization.
-
-A framework-neutral pipeline is:
-
-~~~text
-.md file -> host Markdown parser -> thl code node
-         -> compileAst(block)
-         -> version-1 Trace
-         -> HTML or app UI using the trace data
-         -> optional React player if the host uses React
-~~~
-
-A non-React host can access every frame and build its own scene and controls. The official **visual player** is React-specific in v0.0.2; there is no official Vue, Svelte, Web Component, or server-side SVG export.
-
-## 8. Validation, safety, and publishing
-
-- **Validate before publishing** content; fail the build if a Throughline block is invalid.
-- Preserve the fenced source in Markdown, RSS, search indexes, LLM exports, or copy controls so the original example is never lost.
-- Treat author labels and notes as **text**, not arbitrary HTML.
-- Keep invalid reader-edited input inside an error boundary; the compiler throws `ProgramError`.
-- Avoid recompiling unchanged blocks on every React render. Memoize or precompile.
-- Use [Errors and limits](/docs/throughline/errors-and-limits) for input ceilings and diagnostics.
-- Use [CSS and themes](/docs/throughline/styling) for source/player styling and theme overrides.
-
-For concrete application integrations, see [Other frameworks and products](/docs/throughline/frameworks).
-
+For both formats, validate untrusted input, render labels and notes as plain text, and avoid repeatedly compiling unchanged source. See [Errors and limits](/docs/throughline/errors-and-limits) for diagnostics and [Frameworks](/docs/throughline/frameworks) for runtime setups.

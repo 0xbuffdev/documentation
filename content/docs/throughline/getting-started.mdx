@@ -3,69 +3,52 @@ title: Getting started
 description: Install Throughline, create your first visualization, and display it in React.
 ---
 
-## Requirements
+This guide starts with the standalone compiler. You can add the React player afterward.
 
-- **Node.js 24 or newer** for the supported Node execution environment.
-- A modern **ESM** project. TypeScript declarations ship with the package.
-- **React 19 and React DOM 19** only if you use the React player. They are optional peer dependencies; the compiler does not load React.
+## Before you begin
 
-## 1. Install the library
+Use an ESM project and **Node.js 24 or newer** for Node-based execution. React is not required to compile traces.
+
+## 1. Install Throughline
 
 ~~~sh
 npm install @0xbuff/throughline
 ~~~
 
-With pnpm:
-
-~~~sh
-pnpm add @0xbuff/throughline
-~~~
-
-For React applications, also install the compatible peers if they are not already present:
-
-~~~sh
-npm install react@^19 react-dom@^19
-~~~
-
-These examples target package version `0.0.2`. To reproduce the documented behavior exactly, pin the package version and commit your lockfile:
-
-~~~sh
-npm install @0xbuff/throughline@0.0.2
-~~~
+For a reproducible setup, pin `@0xbuff/throughline@0.0.2` and commit your package lockfile.
 
 ## 2. Compile a trace
 
-Make `counter.mjs` in a Node ESM project:
+Create `counter.mjs`:
 
 ~~~js
 import { compile } from "@0xbuff/throughline";
 
 const source = [
-  "```thl flow",
+  "thl flow",
   'node counter "Counter" = 0',
   'step "Increment"',
   "  set counter = 1",
-  '  note "Counter is one."',
+  '  note "The counter is now one."',
   'step "Increment again"',
   "  set counter = 2",
-  "```",
 ].join("\n");
 
 const trace = compile(source);
 
 for (const frame of trace.frames) {
-  const counter = frame.state.entities.find((entity) => entity.id === "counter");
+  const counter = frame.state.entities.find((item) => item.id === "counter");
   console.log(frame.index, frame.label, counter?.value);
 }
 ~~~
 
-Run it:
+Run the file:
 
 ~~~sh
 node counter.mjs
 ~~~
 
-Expected output:
+Output:
 
 ~~~text
 0 Initial state 0
@@ -73,63 +56,42 @@ Expected output:
 2 Increment again 2
 ~~~
 
-Every `step` creates a new frame, so `frames.length` is the number of steps **plus one**. Frame zero always represents the initial state.
+Each `step` creates a frame; frame `0` is the initial state. The compiler validates the source and produces the frames once. Moving between frames does not rerun the source.
 
-## 3. Render in React (optional)
+## 3. Display the trace in React (optional)
 
-Create a component:
+Install React 19 and React DOM 19 if your project does not already include them:
+
+~~~sh
+npm install react@^19 react-dom@^19
+~~~
+
+Import the player and its CSS. In an application, import the stylesheet once in your root entry.
 
 ~~~tsx
-import { useMemo } from "react";
 import { compile } from "@0xbuff/throughline";
 import { ThroughlinePlayer } from "@0xbuff/throughline/react";
 import "@0xbuff/throughline/styles/throughline.css";
 
-const source = [
-  "```thl flow",
-  'node counter "Counter" = 0',
-  'step "Increment"',
-  "  set counter = 1",
-  '  note "The value changed."',
-  "```",
-].join("\n");
+const trace = compile(
+  'thl flow\nnode counter "Counter" = 0\nstep "Increment"\nset counter = 1',
+);
 
-export function CounterPlayer() {
-  const trace = useMemo(() => compile(source), []);
-  return <ThroughlinePlayer trace={trace} theme="auto" />;
+export function CounterExample() {
+  return <ThroughlinePlayer trace={trace} />;
 }
 ~~~
 
-Import the CSS **once** in your application, preferably in its root stylesheet or entry point. The player supplies the SVG scene, timeline, stepping controls, captions, and an expandable state inspector. It starts paused at frame zero.
+The player starts paused at frame zero and includes stepping controls, captions, and an inspector. Keep the `trace` object stable between renders; replacing it resets playback.
 
-When the trace changes identity, the player resets its position and playback speed. Avoid recompiling on every render: move constant traces out of the component or memoize them.
+See [React player](/docs/throughline/react-player) for props, keyboard controls, and optional sound.
 
-Learn about [player options, keyboard shortcuts, accessibility, and CSS themes](/docs/throughline/react-player).
+## Next steps
 
-## 4. Explore the included examples
+- [Learn the core concepts](/docs/throughline/concepts) to understand frames and events.
+- [Write a flow trace](/docs/throughline/flow) to create more complex examples.
+- [Add traces to Markdown or MDX](/docs/throughline/markdown-mdx) to embed them in content.
 
-~~~ts
-import { EXAMPLES } from "@0xbuff/throughline/examples";
-import { compile } from "@0xbuff/throughline";
-
-for (const example of EXAMPLES) {
-  const trace = compile(example.source);
-  console.log(example.id, example.title, trace.frames.length);
-}
-~~~
-
-The built-in fixtures include **Reconciliation**, **Shared references**, and **Matrix multiplication**. They are real input sources, not synthetic mock traces.
-
-To customize the player to match your application's design system, start with [CSS and theming](/docs/throughline/styling); to work with all public types and functions, use [Complete types and exports](/docs/throughline/type-reference).
-
-## What to read next
-
-- [Concepts and snapshot semantics](/docs/throughline/concepts)
-- [Flow authoring reference](/docs/throughline/flow)
-- [Domain-specific syntax](/docs/throughline/bindings)
-- [Errors and fixed compilation limits](/docs/throughline/errors-and-limits)
-
-<Callout type="warn">
-  Pass one Throughline block to `compile()`, not an entire Markdown article. A Markdown host must extract the relevant fenced block first; see [Markdown and MDX integration](/docs/throughline/markdown-mdx).
+<Callout type="info">
+  The compiler accepts one `thl` block at a time, either with a bare header or its Markdown fence. If your content is a full Markdown article, extract each `thl` code block before compiling it.
 </Callout>
-

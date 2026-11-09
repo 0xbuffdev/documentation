@@ -1,84 +1,43 @@
 ---
 title: How Throughline works
-description: Understand what happens when you compile a trace and how frames are rendered and played back.
+description: Learn how Throughline validates, compiles, and renders traces.
 ---
 
-Throughline has two deliberately separate layers: a **React-free compiler** and an optional **React player**. The root package does not rely on DOM, browser storage, a service, a network connection, or React.
+Throughline has two independent layers: a **React-free compiler** and an optional **React 19 player**. The root package can compile traces without a browser, account, backend, or network connection.
 
-## From a code fence to a scene
+## Compilation
 
 ~~~mermaid
 flowchart TD
-  A["One thl domain block"] --> B["parseThl"]
-  B --> C{"Domain?"}
-  C -->|flow| D["parseProgram"]
-  C -->|computed| E["Domain parser and builder"]
-  D --> F["Program v1"]
-  E --> F
-  F --> G["validateProgram"]
-  G --> H["compileProgram"]
-  H --> I["Trace v1: initial + step snapshots"]
-  I --> J["Host: inspect / serialize / describe"]
-  I --> K["ThroughlinePlayer (optional)"]
-  K --> L["Responsive SVG + captions + controls"]
+  A["One thl block"] --> B["parseThl"]
+  B --> C["Domain parser"]
+  C --> D["Program version 1"]
+  D --> E["Validation"]
+  E --> F["compileProgram"]
+  F --> G["Trace: initial frame + step frames"]
+  G --> H["Optional React player"]
 ~~~
 
-The public `compile(source)` function orchestrates this. `compileAst(ast)` skips the standalone source parser when a host has already parsed a Markdown code block.
+The `compile(source)` convenience function runs this process. Use `compileAst(block)` when your Markdown parser has already extracted a code block.
 
-## Step 1: parsing
+1. **Parse:** a `thl` header chooses one of five domains. The `flow` parser reads declarations and steps; the other domains build Programs from their smaller input languages.
+2. **Validate:** identifiers, links, paths, JSON values, event conflicts, schema versions, and resource limits are checked. Invalid inputs throw `ProgramError` with diagnostics.
+3. **Compile:** the initial values form frame zero. Each named step applies its events and creates another complete snapshot.
 
-`parseThl` accepts a bare `thl domain` header or one CommonMark-style backtick/tilde fenced block. It is not a full Markdown document parser and rejects extra text following a closing fence. Each block must specify exactly one supported domain, without header options. Source line positions are preserved for error reporting.
+A step is atomic: its events produce one frame, not intermediate frames. A `send` event describes movement along a link; only `set` updates values. Hidden entities retain values in trace data.
 
-For `flow`, the parser reads declarations followed by named steps. For `bindings`, `binary`, `matrix`, and `callstack`, adapters parse small, bounded input languages and **construct** ordinary Programs using the same model.
+See [Core concepts](/docs/throughline/concepts) for frame semantics and [Errors and limits](/docs/throughline/errors-and-limits) for constraints.
 
-## Step 2: validating the Program
+## Rendering and playback
 
-The version-1 `Program` stores:
+The optional player uses existing frames to create a scene of visible entities, groups, and links. It measures available width in the browser and adapts its SVG layout. Captions and an inspector expose the state as text, not only through visuals.
 
-- `entities`: declared state holders with JSON values and optional presentation details;
-- `relations`: directed references between declared entities;
-- `beats`: labeled event groups, one per step;
-- `groups` (optional): lane layout directions.
+Seeking selects a frame by index. It does **not** rerun parsing, compilation, or arbitrary authored code. When the `trace` prop changes identity, playback resets to the first frame.
 
-Validation checks the schema version, ids, source positions, JSON data, reference targets, event operations, conflicting writes, visibility edits, and work limits. Invalid source produces `ProgramError` diagnostics; Throughline **never executes** authored text as JavaScript.
+For component behavior see [React player](/docs/throughline/react-player); for appearance see [Styling](/docs/throughline/styling).
 
-## Step 3: applying steps
+## Responsibilities of the host application
 
-Compilation starts with a snapshot of the initial declared state. It processes each beat in order, applying its writes as one logical step and producing one resulting frame.
+Throughline compiles bounded state descriptions; it is not a JavaScript sandbox or an authorization system. An application accepting user input is responsible for authentication, rate limiting, content moderation where appropriate, error boundaries, and persistence. Do not render user-supplied labels or notes as raw HTML.
 
-- `set` changes a value in that frame and later frames; nested writes use immutable copies of affected containers.
-- `focus` highlights positions for the current frame only.
-- `send` records a current-frame transfer annotation; it never changes destination values.
-- `show` / `hide` updates visibility persistently. Hidden entities retain identity and values, but are omitted from the rendered scene.
-- `note` contributes explanatory caption text.
-
-The compiled trace is detached from the input Program. Seeking `frames[index]` directly retrieves the compiled snapshot—it does not run previous steps again or execute the authored source at playback time.
-
-**Atomic step semantics** matter: overlapping writes are forbidden and no intermediate substate is shown between events in one beat. To teach an intermediate state, author another named step.
-
-## Step 4: scene composition
-
-The React player derives a scene layout from the complete trace and the available container width. It allocates positions for nodes and links and reserves room for changing values so common layouts remain stable while seeking. A `ResizeObserver` measures the mounted player; the server starts with a deterministic default width for SSR.
-
-The renderer filters hidden nodes and suppressed links, draws the visible groups and relations, and uses the current frame’s `active`, `changed`, and `transfers` lists to show focus, changed cells, and transfer strokes. Values have bounded visual representations to avoid unreadable or overflowing cells. The **Inspect state** panel retains complete values for currently visible nodes.
-
-See [CSS and themes](/docs/throughline/styling) for colors, layout styling, container behavior, and SVG selectors.
-
-## Step 5: playback and description
-
-`ThroughlinePlayer` owns its local seek reducer, speed, and optional sound state. It starts paused at frame zero. Prev/Next, slider, keyboard shortcuts, and interval ticks select existing frames. Replacing the `trace` reference resets playback.
-
-The React-free `describeFrame` function creates accessible text summaries from frames; the player uses those for its status region and the SVG’s accessible name. Optional sonification uses Web Audio or a host-provided callback. Audio does not execute until opted in.
-
-## Determinism and resource boundaries
-
-The package enforces a maximum source length, entity/relation/step/event ceilings, nested JSON constraints, and deterministic program/expanded-trace budgets. These are not hard CPU milliseconds or memory bytes. See [Errors and limits](/docs/throughline/errors-and-limits) for the full quantitative table.
-
-A user-supplied snippet is input to a **bounded model compiler**, not a sandbox for executing scripts. The package does not authenticate users, store source, make network requests, emit telemetry, or assign grades. Your host still owns permission checks, Markdown safety, submission throttling, error boundaries, and any persistence.
-
-## Compatibility boundaries
-
-The npm package is `0.0.2`; the Program and Trace schemas both have `version: 1`. They are independent. When building an application, use the four supported public imports and the documented Program/Trace data structures. The built-in player handles layout and playback; custom consumers should work with the public frame data.
-
-For concrete integration patterns, see [Markdown and MDX](/docs/throughline/markdown-mdx), [Other frameworks and products](/docs/throughline/frameworks), and [API reference](/docs/throughline/programmatic-api).
-
+The package limits source size and compilation work, but those limits are **not** guarantees of exact CPU time or memory usage. Validate content during publication when possible.

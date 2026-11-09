@@ -1,127 +1,80 @@
 ---
 title: React player
-description: Render compiled traces with accessible controls, responsive SVG, captions, themes, and optional sound.
+description: Render compiled traces with controls, captions, keyboard navigation, and optional sound.
 ---
 
-The player is optional. The compiler works independently of React; the `@0xbuff/throughline/react` entry point adds a React 19 component for browsing precompiled frames.
+`ThroughlinePlayer` displays a compiled `Trace` in React 19. The compiler works without React; import the player only when you need the interactive visualization.
 
-## Install and import
+## Install and render
 
 ~~~sh
 npm install @0xbuff/throughline react@^19 react-dom@^19
 ~~~
 
 ~~~tsx
-import { useMemo } from "react";
 import { compile } from "@0xbuff/throughline";
 import { ThroughlinePlayer } from "@0xbuff/throughline/react";
 import "@0xbuff/throughline/styles/throughline.css";
 
-const source = [
-  "thl flow",
-  'node phase "Phase" = "queued"',
-  'step "Start"',
-  'set phase = "running"',
-  'step "Finish"',
-  'set phase = "done"',
-].join("\n");
+const trace = compile(
+  'thl flow\nnode phase "Phase" = "queued"\nstep "Start"\nset phase = "running"',
+);
 
-export function PhaseWalkthrough() {
-  const trace = useMemo(() => compile(source), []);
-  return <ThroughlinePlayer trace={trace} theme="auto" />;
+export function Example() {
+  return <ThroughlinePlayer trace={trace} />;
 }
 ~~~
 
-Import the stylesheet once in your application. The supported CSS entry point is `@0xbuff/throughline/styles/throughline.css`; avoid direct imports from the package's private `src/` or `dist/` paths.
+Import the stylesheet once in your application. Compile static sources outside a component or use `useMemo` for changing inputs. A new `trace` object resets playback to frame zero.
 
-## Component props
+## Props
 
-| Prop | Type | Default | Behavior |
+| Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
-| `trace` | `Trace` | Required | The fully compiled frames |
-| `className` | `string` | None | Additional class on the root `.thl` element |
-| `theme` | `"light"`, `"dark"`, or `"auto"` | `"auto"` | Light, dark, or host-following color scheme |
-| `sonification` | `SonificationOptions` | Omitted | Enables the optional sound control; see below |
+| `trace` | `Trace` | Required | Compiled frames to display |
+| `className` | `string` | None | Class on the root `.thl` element |
+| `theme` | `"light" \| "dark" \| "auto"` | `"auto"` | Player color scheme |
+| `sonification` | `SonificationOptions` | Omitted | Include an optional sound toggle |
 
-There is no `source` prop: compile the source yourself and pass a `Trace`. There are also no public `initialStep`, `onStepChange`, or controlled-playback props in v0.0.2.
+The player accepts a **Trace**, not source text. It does not provide controlled-step or step-change callback props in v0.0.2.
 
-### Trace identity
+## Playback
 
-The player starts at **frame zero**, paused, at **1×** speed. If the `trace` object identity changes, it resets playback and its position. If source is static, compile outside the component. If it depends on props, memoize:
+The player starts **paused at frame zero**, at `1×` speed. It includes step-back, play/pause or replay, step-forward, a timeline, speed selection (`0.5×`, `1×`, `2×`), and an expandable **Inspect state** panel. At `1×`, it advances approximately every 1.5 seconds.
 
-~~~tsx
-const trace = useMemo(() => compile(source), [source]);
-~~~
-
-Do not edit a trace in place to simulate an update. Compile new input into a new trace.
-
-## Controls and keyboard navigation
-
-The player includes:
-
-- **Step back / Step forward** buttons, disabled at the respective bounds.
-- **Play / Pause / Replay** with automatic stopping at the final frame.
-- **Timeline** range input for direct seeking.
-- **Playback speed:** `0.5×`, `1×`, or `2×`. At `1×`, the interval between frames is approximately 1.5 seconds.
-- **Inspect state:** expandable, text-based view of the *visible* entities and their complete JSON values.
-
-When focus is on the **Visualization player** group itself (rather than on a child control), the following shortcuts apply:
+Keyboard shortcuts work when the **Visualization player** group itself has focus, not when a child control is focused:
 
 | Key | Action |
 | --- | --- |
-| Right arrow | Next frame |
-| Left arrow | Previous frame |
-| Home | Initial frame |
-| End | Last frame |
+| Left / Right arrow | Previous / next frame |
+| Home / End | First / last frame |
 | Space | Play or pause |
 
-Manual seeking pauses automatic playback. If the trace contains only the initial frame, playback controls are disabled.
+Manual seeking pauses playback. Controls that cannot move beyond the available frames are disabled.
 
-## Accessibility and responsive layout
+## Accessibility
 
-The player includes a focusable labeled group, semantic buttons, an accessible range input, a live status summary, an SVG with a descriptive name, captions, and a textual inspector. It derives readable frame summaries using `describeFrame`, so the explanation does not depend solely on SVG color or shape.
+The player provides semantic buttons, a labeled timeline, a frame summary for screen readers, captions, an accessible SVG name, and a text-based state inspector. It respects reduced-motion preferences and adapts to its container width.
 
-The SVG layout adapts to container width. Long values can be summarized visually while **Inspect state** retains the complete visible JSON values. It respects `prefers-reduced-motion` by disabling transfer animations. Scene measurements initialize to a fixed width for server rendering and adapt in the browser using `ResizeObserver`.
+The scene may shorten long values to fit; **Inspect state** exposes their complete JSON values for visible nodes. See [Accessibility](/docs/throughline/accessibility) for assistive-technology and customization considerations.
 
-## Styling and themes
+## Themes and sound
 
-The packaged stylesheet uses `thl-` prefixed class names and CSS tokens. Set `theme="light"`, `theme="dark"`, or `theme="auto"`. To customize, pass a class and override the tokens in a stylesheet loaded **after** the package CSS.
+Pass `theme="light"`, `theme="dark"`, or `theme="auto"`. You can customize colors by overriding the published `--thl-*` CSS properties on the player root:
 
 ~~~tsx
 <ThroughlinePlayer trace={trace} className="lesson-trace" theme="dark" />
 ~~~
 
-~~~css
-.thl.lesson-trace {
-  --thl-bg: #0b1412;
-  --thl-panel: #16231e;
-  --thl-surface: #1c2d25;
-  --thl-text: #f0f8f1;
-  --thl-muted: #a7bbb0;
-  --thl-line: #49665a;
-  --thl-focus: #9becbf;
-  --thl-focus-bg: #244a36;
-  --thl-change: #ffd38c;
-  --thl-change-bg: #4b371b;
-}
-~~~
+See [Styling and themes](/docs/throughline/styling) for token names and examples.
 
-A custom stylesheet may replace the packaged CSS altogether, but then **you** must supply the necessary layout, focus indicators, screen-reader-only text, reduced-motion, and control styles. Overriding tokens is the safer path.
-
-## Optional sonification
-
-Sound controls are **absent by default**. They appear only when you supply `sonification`:
+Sound is **off and unavailable by default**. Supplying `sonification` exposes a toggle:
 
 ~~~tsx
-<ThroughlinePlayer
-  trace={trace}
-  sonification={{ enabled: false }}
-/>
+<ThroughlinePlayer trace={trace} sonification={{ enabled: false }} />
 ~~~
 
-Passing `enabled: false` starts muted but exposes the toggle. Passing `enabled: true` starts with sound enabled. Sound is not played simply by importing Throughline without a `sonification` option.
-
-For custom feedback, supply an `onTone` handler. This replaces the built-in Web Audio tone with an event callback:
+Set `enabled: true` to start with sound enabled, or use `onTone` for a custom callback:
 
 ~~~tsx
 <ThroughlinePlayer
@@ -134,13 +87,10 @@ For custom feedback, supply an `onTone` handler. This replaces the built-in Web 
 />
 ~~~
 
-The event contains a zero-based frame step, the total frame count, a frequency (approximately 261.63–523.25 Hz), and a standard duration of 180 ms. Sonification is **presentation feedback**, not a measure of runtime cost or contention. Audio failure does not stop visual playback.
-
-For **every CSS variable**, light/dark default, scoped theme override, advanced selector, responsive behavior, and troubleshooting, see the [complete CSS and theming reference](/docs/throughline/styling). For assistive-technology behavior, consult [Accessibility and interaction](/docs/throughline/accessibility).
+Sound is presentation feedback; it does not alter trace data. An omitted `sonification` prop removes the sound control entirely.
 
 ## Server rendering
 
-Core compilation does not need a DOM. The React player is designed for SSR and hydration, with browser-only observers and audio invoked from effects. Your host must supply React 19 and a bundler capable of handling the explicit CSS import. For framework-specific server/client boundaries, render the player in the appropriate client component.
+The player supports React SSR and hydration. Browser measurements and sound run after mounting, while frame compilation and reading remain framework independent. In frameworks with server and client components, render the player inside the appropriate client boundary.
 
-For static sites or articles containing many trace blocks, compile sources at build time when possible and load only the player needed for the active view. [Integration guide](/docs/throughline/integrations).
-
+For application-specific setup, see [Frameworks](/docs/throughline/frameworks).

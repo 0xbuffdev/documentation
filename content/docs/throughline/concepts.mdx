@@ -3,113 +3,77 @@ title: Core concepts
 description: Learn how Throughline turns source text into steps and complete state snapshots.
 ---
 
-Throughline separates **what is authored**, **what changes**, and **how it is displayed**. This separation is what makes it useful both in offline build tools and in interactive teaching interfaces.
+Throughline separates the trace you write from the frames it produces. This makes the result predictable and lets a player move directly to any step.
 
-## Processing pipeline
+## From source to frames
 
 ~~~mermaid
 flowchart LR
-  A["One thl block"] --> B["Parse domain"]
-  B --> C["Program v1"]
-  C --> D["Validate & compile"]
-  D --> E["Trace v1"]
-  E --> F["Inspect or serialize"]
-  E --> G["Optional React player"]
+  A["One thl block"] --> B["Parse and validate"]
+  B --> C["Program"]
+  C --> D["Compile"]
+  D --> E["Trace: frames"]
+  E --> F["Read data or render"]
 ~~~
 
-1. **Source:** a single `thl <domain>` block identifies the domain.
-2. **Domain parser:** `flow` builds an authored `Program`; other domains compute a `Program` from bounded parameters.
-3. **Validation:** invalid identifiers, references, values, operations, and work limits are rejected.
-4. **Compilation:** `compileProgram` creates an initial frame plus one complete state snapshot per beat.
-5. **Presentation:** host code can read frames directly, or the optional React player can lay them out as SVG and let learners seek without running the source again.
+- **Source** is one `thl` block. The first line selects a domain such as `flow` or `binary`.
+- **Program** describes entities, links, and ordered steps after the domain is parsed.
+- **Trace** is the compiled result. It contains the initial state and a complete snapshot after each step.
+- **Player** is optional. It displays the trace and lets you move between frames.
 
-No stage in this pipeline evaluates arbitrary authored JavaScript.
+The compiler does not interpret arbitrary JavaScript or call a service.
 
-## Entities, relations, and groups
+## Entities and links
 
-An **entity** is a named state holder with an id, human-readable label, and JSON-like value. Optional properties select a layout lane, value view, and initial visibility.
-
-A **relation** is a directed link between two entity ids. It can have a label and can initially be hidden.
-
-A **group** gives a named lane a layout hint: `row`, `column`, or `tree`. Groups affect presentation, not the meaning of the underlying state.
+In the `flow` domain, an **entity** is a named value with an identifier and a display label. A **relation** is a directed link between entities. A **group** can arrange related entities in a row, column, or tree.
 
 ~~~md
 ```thl flow
-group "Pipeline" as row
-node source "Source" in "Pipeline" = "ready"
-node target "Destination" in "Pipeline" = null
-link deliver source -> target "message"
-step "Send"
-  send deliver = "ready"
-  focus source, target
-  note "The message is in transit."
-step "Apply"
-  set target = "ready"
-  note "The destination now holds the value."
+node input "Input" = 1
+node output "Output" = 0
+link copy input -> output "copy"
+step "Transfer"
+  send copy = 1
+step "Store"
+  set output = 1
 ```
 ~~~
 
-Importantly, `send` is a **transfer annotation**, not a state mutation. The destination changes only when a `set` event writes it.
+Here, `send` highlights a transfer, but does **not** change `output`. Only `set` changes its stored value.
 
-## Beats and events
+## Steps and events
 
-A **beat** is one named step. Its ordered list of events can:
+A **step** (also called a beat in the API) contains one or more events. The compiler combines their effects into a single resulting frame.
 
-| Event | Meaning | Persists? |
-| --- | --- | --- |
-| `set` | Write a value at an entity or valid nested target | Yes |
-| `focus` | Mark entities or addressed positions as active | No; frame-local |
-| `send` | Annotate a transfer on a relation | No; frame-local |
-| `note` | Add explanation to the frame | No; frame-local |
-| `show` / `hide` | Change node or link visibility | Yes |
+| Event | What happens |
+| --- | --- |
+| `set` | Changes a value and keeps that change in later frames |
+| `show` / `hide` | Changes visibility for this and later frames |
+| `focus` | Highlights a target in the current frame |
+| `send` | Shows a transfer on a link in the current frame |
+| `note` | Adds explanatory text to the current frame |
 
-All writes in a beat produce **one resulting snapshot**. Distinct writes to the same or overlapping targets in one beat are rejected; use separate beats when the intermediate state should be visible.
+Updates to the same or overlapping targets in one step are rejected. Split them into separate steps if you need to show intermediate states.
 
 ## Frames and snapshots
 
-A compiled `Trace` contains `version: 1`, a `frames` array, and optional scene groups.
-
-Each `Frame` has an `index`, a `label`, the resulting `state`, its source `events`, and optionally a source-line reference. Its `state` includes:
-
-- `entities` and `relations`: the complete current state and visibility flags.
-- `active`: focused and written targets for this beat.
-- `changed`: target strings written by `set`.
-- `transfers`: `send` relations with optional payloads.
-- `notes`: captions authored by `note`.
+Frame `0` contains the declared initial state. Each subsequent frame represents one authored or generated step, including its label, events, and a complete state snapshot.
 
 ~~~ts
-import { compile, describeFrame } from "@0xbuff/throughline";
+import { compile } from "@0xbuff/throughline";
 
-const trace = compile([
-  "thl flow",
-  'node status "Status" = "idle"',
-  'step "Begin"',
-  'set status = "running"',
-].join("\n"));
+const trace = compile(
+  'thl flow\nnode status "Status" = "idle"\nstep "Start"\nset status = "running"',
+);
 
-const initial = trace.frames[0]; // "Initial state"
-const next = trace.frames[1];
-
-console.log(initial.state.entities[0].value); // "idle"
-console.log(next.state.entities[0].value); // "running"
-console.log(next.state.changed); // ["status"]
-console.log(describeFrame(next, trace.frames.length));
+console.log(trace.frames[0].state.entities[0].value); // "idle"
+console.log(trace.frames[1].state.entities[0].value); // "running"
 ~~~
 
-Snapshots are detached from the input program and built using immutable value updates. Treat returned trace data as **read-only**; mutations to returned objects are not a supported editing API.
+You can read `trace.frames[n]` directly. The player does not replay earlier steps when you seek; it selects an existing snapshot. Treat compiled trace data as read-only.
 
-## Initial frame and seeking
+## Versions
 
-- Frame zero contains the initial declared values, no active targets, no notes, and no transfers.
-- Each following frame corresponds to one authored or computed step.
-- `trace.frames[n]` is a direct state lookup. Seeking does not replay earlier steps or rerun the authored source.
-- Declared but hidden entities remain in snapshots; they are simply omitted from the visible scene until shown. Hidden endpoints suppress attached visible links.
+The npm package and trace data use different version numbers. In Throughline v0.0.2, `Program.version` and `Trace.version` are both `1`. See [compatibility](/docs/throughline/compatibility) before persisting trace data across package upgrades.
 
-For a deeper explanation of parsing, validation, scene layout, and replay behavior, see [Architecture and execution model](/docs/throughline/architecture).
-
-## Package version versus trace schema
-
-The npm release here is **v0.0.2**. The `Program` and `Trace` schemas are **version 1**. The independent schema number is not an npm package version and is not a claim that every future package release will preserve all behavior.
-
-For exact TypeScript shapes and entry points, see the [API reference](/docs/throughline/programmatic-api).
-
+For details of validation and rendering, read [How Throughline works](/docs/throughline/architecture). For syntax, start with [Flow authoring](/docs/throughline/flow).

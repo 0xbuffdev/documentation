@@ -68,7 +68,7 @@ export const THROUGHLINE_DEMOS = {
 			'step "Notify customer"',
 			'  set status = "confirmed"',
 			'  note "The customer sees the recovered order; no second charge was created."',
-		].join("\\n"),
+		].join("\n"),
 		expectedFrames: 12,
 	},
 	references: {

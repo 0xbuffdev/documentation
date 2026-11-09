@@ -1,112 +1,52 @@
 ---
-title: Integrating Throughline
-description: Build-time validation, Markdown extraction, ESM hosts, React client boundaries, and offline rendering practices.
+title: Integration options
+description: Choose how to compile and display Throughline traces in your application.
 ---
 
-Throughline is deliberately a **single-block compiler**, not a full Markdown or MDX parser. Integration is simplest when your content system already identifies fenced code blocks and passes only the Throughline ones to the compiler.
+Throughline compiles **one trace block at a time**. Your host application decides where blocks come from and how to display the results.
 
-For a ready-to-use setup that handles actual Markdown/MDX `thl` code fences and Fumadocs components, follow the [Markdown and MDX integration guide](/docs/throughline/markdown-mdx). For React Router, Next.js, Astro, plain Node, and non-React products, use [Other frameworks and products](/docs/throughline/frameworks).
+## Choose an approach
 
-## Two integration patterns
+| Use case | Recommended approach |
+| --- | --- |
+| Documentation or lessons | Extract `thl` fences and validate them when content is built |
+| React application | Compile the source and pass a stable `Trace` to `ThroughlinePlayer` |
+| Interactive editor | Compile submitted input, catch `ProgramError`, and show diagnostics |
+| CLI or content pipeline | Import only the core compiler; read or serialize `Trace` data |
+| Non-React UI | Read the trace frames and supply your own renderer |
 
-### Build-time compilation
+See [Markdown and MDX](/docs/throughline/markdown-mdx) for code-fence processing and [Frameworks](/docs/throughline/frameworks) for specific hosts.
 
-For static lessons or product documentation, compile trusted authored `thl` blocks during content processing and fail the build on invalid syntax. Save or transport the resulting `Trace` to the rendering layer.
+## Compile extracted Markdown
 
-1. Parse the Markdown/MDX document using the host's Markdown parser.
-2. Find fenced code blocks whose info string identifies `thl` and a supported domain.
-3. Extract one block and call `compile(block)`, or pass parser-owned lines to `compileAst()`.
-4. Handle `ProgramError` as a content diagnostic and report source location.
-5. Send the validated `Trace` to the optional React player or another consumer.
-
-A host parser should own document nesting, indentation, code-fence boundary detection, and the mapping of its source locations. Do not pass an entire Markdown article to `compile`.
-
-### Runtime compilation
-
-For interactive editors or user-authored examples, compile each submitted block in a guarded code path and display errors without crashing the page. The compiler is synchronous and bounded, but its limits are **not exact CPU-time or memory guarantees**. For potentially hostile or very frequent submissions, use the host's resource controls and consider an isolated worker appropriate to that runtime.
-
-## When the Markdown parser gives you the block
-
-If your host already has the block's domain, body lines, and original fence line, avoid converting back into a Markdown string:
+A Markdown parser should identify the fence and domain. Pass the extracted block to `compileAst`, retaining its source line for useful errors:
 
 ~~~ts
-import { compileAst, ProgramError, type ThlBlock } from "@0xbuff/throughline";
+import { compileAst, ProgramError } from "@0xbuff/throughline";
 
-function compileDocumentBlock(block: ThlBlock) {
-  try {
-    return { ok: true as const, trace: compileAst(block) };
-  } catch (error) {
-    if (error instanceof ProgramError) {
-      return { ok: false as const, diagnostics: error.diagnostics };
-    }
-    throw error; // Unexpected host or runtime failure
+try {
+  const trace = compileAst({
+    kind: "flow",
+    lines: ['node n "Number" = 0', 'step "Set"', "set n = 1"],
+    source: { line: 12 },
+  });
+
+  console.log(trace.frames.length);
+} catch (error) {
+  if (error instanceof ProgramError) {
+    console.error(error.diagnostics);
+  } else {
+    throw error;
   }
 }
-
-const result = compileDocumentBlock({
-  kind: "flow",
-  lines: ['node n "Number" = 0', 'step "Set"', 'set n = 1'],
-  source: { line: 12 }, // line of the opening fence in the article
-});
 ~~~
 
-Here, the first block-body line is treated as article line **13**. Blank lines and comments inside the block do not erase original line offsets.
+Do not pass an entire Markdown article to `compile()`. If a host already parses the document, use its code nodes instead of searching raw text for fences.
 
-A parser-supplied `ThlBlock` can also omit `source` if source mapping is unavailable. Then diagnostic line numbers are relative to the block.
+## Choose when to compile
 
-## Static application / CLI without React
+**Build time** is usually best for published content: a malformed trace fails the content build instead of breaking a reader's page. The generated trace can be serialized for later rendering.
 
-~~~js
-import { compile, describeFrame } from "@0xbuff/throughline";
+**Runtime** is appropriate for interactive input. Catch validation errors outside the player, avoid compiling unchanged sources on every render, and apply the host's own resource controls.
 
-const source = 'thl callstack\nfact 3';
-const trace = compile(source);
-
-for (const frame of trace.frames) {
-  console.log(describeFrame(frame, trace.frames.length));
-}
-~~~
-
-No browser globals, React, service credentials, or remote APIs are required for this workflow.
-
-## React / SSR hosts
-
-For a React 19 application:
-
-~~~tsx
-import { useMemo } from "react";
-import { compile } from "@0xbuff/throughline";
-import { ThroughlinePlayer } from "@0xbuff/throughline/react";
-import "@0xbuff/throughline/styles/throughline.css";
-
-export function TraceBlock({ source }: { source: string }) {
-  const trace = useMemo(() => compile(source), [source]);
-  return <ThroughlinePlayer trace={trace} />;
-}
-~~~
-
-This sample assumes **validated** source and is deliberately minimal. A real authoring/editor experience should catch `ProgramError` before rendering the component or handle it through the host's error boundary. Avoid using untrusted source directly in a render loop or recompiling it on every frame change.
-
-When rendering server-side, the core compiler stays React-free; the player uses browser-only measurement and sound in effects. Respect your framework's server/client component boundary. Import player CSS explicitly and once.
-
-## Rendering data safely
-
-- Treat captions and labels as **plain text**, not HTML. The built-in React player does this.
-- Do not execute text in `flow` or the restricted `bindings` language. Compilation is a model transformation, not evaluation.
-- Only supported entry points should be imported; do not access package internals to bypass validation.
-- Do not rely on the absence of compilation errors to validate unrelated Markdown, lesson policy, or instructional accuracy.
-- If persisting traces, carry the `version` property and verify it when reading; schema `1` is independent of package release `0.0.2`.
-
-## Troubleshooting integration
-
-| Symptom | Likely reason | Action |
-| --- | --- | --- |
-| `Expected a thl <domain> block` | Full Markdown, wrong fence language, or missing header passed to `compile()` | Extract one `thl` block |
-| `Unknown domain` | A domain outside the supported five | Choose a supported domain |
-| React peer dependency error | React player imported without React 19 peers | Install compatible `react` and `react-dom` |
-| Player looks unstyled | Opt-in CSS was not imported | Import `styles/throughline.css` once |
-| Playback keeps resetting | New trace object passed on each render | Memoize or cache the compiled trace |
-| Frame content appears shorter than full data | Value view truncation for legibility | Open **Inspect state** |
-
-For error handling and quantitative ceilings, see [Errors and limits](/docs/throughline/errors-and-limits).
-
+Throughline does not execute authored JavaScript, fetch content, or store traces. Labels and notes should be rendered as text. For diagnostic messages and resource ceilings, see [Errors and limits](/docs/throughline/errors-and-limits).

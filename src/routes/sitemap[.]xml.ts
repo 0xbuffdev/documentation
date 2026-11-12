@@ -11,11 +11,6 @@ export async function loader({ context }: Route.LoaderArgs) {
 	const urls = [
 		{ loc: toSiteUrl(ROUTES.home), changefreq: "daily", priority: "1.0" },
 		...(products.length ? [{ loc: toSiteUrl(ROUTES.docs), changefreq: "daily", priority: "0.9" }] : []),
-		{
-			loc: toSiteUrl(ROUTES.manifesto),
-			changefreq: "monthly",
-			priority: "0.9",
-		},
 		{ loc: toSiteUrl(ROUTES.llms), changefreq: "weekly", priority: "0.6" },
 		{ loc: toSiteUrl(ROUTES.llmsFull), changefreq: "weekly", priority: "0.6" },
 		...pages

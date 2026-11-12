@@ -1,9 +1,9 @@
 import { loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/plugins/lucide-icons";
-import { docs, manifestoDocs } from "./docs";
+import { docs } from "./docs";
 import { ROUTES } from "./site";
 
-export { docs, manifestoDocs };
+export { docs };
 
 /**
  * Server-side page-tree loader.

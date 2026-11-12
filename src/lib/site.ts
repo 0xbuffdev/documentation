@@ -39,7 +39,6 @@ export const SITE = {
 /** Canonical content locations shared by the source loader and route tooling. */
 export const CONTENT_DIRS = {
 	docs: docsConfig.docsContentDir,
-	manifesto: docsConfig.manifestoContentDir,
 } as const;
 
 /** Outbound company pages shared by the header and footer. */
@@ -60,6 +59,7 @@ export const ROUTES = {
 	docs: "/docs",
 	/** Default product shown when navigating to /docs. */
 	docsDefault: "/docs",
+	/** Legacy path. Redirected permanently to the canonical company-site manifesto. */
 	manifesto: "/manifesto",
 	docsOg: docsConfig.docsImageRoute,
 	llms: "/llms.txt",
@@ -68,11 +68,6 @@ export const ROUTES = {
 	sitemap: "/sitemap.xml",
 	searchIndex: "/search-index.json",
 } as const;
-
-/** Static application pages in addition to documentation pages discovered from MDX. */
-export const STATIC_PRERENDER_PATHS = [
-	ROUTES.manifesto,
-] as const;
 
 /** Primary navigation rendered by the Fumadocs layouts. */
 export const PRIMARY_NAVIGATION = [

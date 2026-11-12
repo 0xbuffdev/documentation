@@ -38,7 +38,7 @@ const COLUMNS: { title: string; links: FooterLink[] }[] = [
 			{ label: "Notes", href: COMPANY_LINKS.notes, external: true },
 			{ label: "Changelog", href: COMPANY_LINKS.changelog, external: true },
 			{ label: "The Dispatch", href: `${SITE.companyUrl}/dispatch`, external: true },
-			{ label: "MemoFS Manifesto", href: ROUTES.manifesto },
+			{ label: "MemoFS Manifesto", href: `${SITE.companyUrl}/products/memofs/manifesto`, external: true },
 			{ label: "llms.txt", href: ROUTES.llms },
 			{ label: "Sitemap", href: ROUTES.sitemap },
 		],

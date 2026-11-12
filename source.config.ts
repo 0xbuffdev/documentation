@@ -16,9 +16,3 @@ export const { docs, meta } = defineDocs({
 	dir: "content/docs",
 	...CONTENT_DOCS_OPTIONS,
 });
-
-export const { docs: manifestoDocs } = defineDocs({
-	// Fumadocs requires a literal; keep it aligned with docs-config.json.
-	dir: "content/manifesto",
-	...CONTENT_DOCS_OPTIONS,
-});

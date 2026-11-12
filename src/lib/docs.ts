@@ -16,12 +16,3 @@ export const docs = defineDocs({
 		postprocess: { includeProcessedMarkdown: true },
 	},
 });
-
-export const manifestoDocs = defineDocs({
-	// Fumadocs requires a literal; keep it aligned with docs-config.json.
-	dir: "content/manifesto",
-	docs: {
-		async: true,
-		postprocess: { includeProcessedMarkdown: true },
-	},
-});

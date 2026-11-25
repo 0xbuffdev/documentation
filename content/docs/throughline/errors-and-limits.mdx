@@ -3,6 +3,8 @@ title: Troubleshooting and limits
 description: Understand input errors, validation failures, and compilation limits.
 ---
 
+**Version scope — v0.0.2 (historical schema 1).** This page and its examples use `@0xbuff/throughline@0.0.2`, the version pinned by this documentation app. They do not describe the unreleased schema-2 API intended for v0.2.0. See [compatibility and upgrading](/docs/throughline/compatibility).
+
 Throughline validates authored and generated programs before returning snapshots. It throws `ProgramError` for known compilation failures. The package intentionally rejects invalid or unbounded input instead of attempting to recover silently.
 
 ## Catch source diagnostics

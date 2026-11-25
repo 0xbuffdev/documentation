@@ -110,3 +110,19 @@ test("Throughline public docs exclude package-contribution procedures", () => {
     );
   }
 });
+
+
+test("Historical Throughline articles match the pinned schema-1 package", async () => {
+  const manifest = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(manifest.dependencies["@0xbuff/throughline"], "0.0.2");
+  for (const [name, doc] of content) {
+    assert.match(doc, /Version scope — v0\.0\.2 \(historical schema 1\)/, name);
+    assert.match(doc, /@0xbuff\/throughline@0\.0\.2/, name);
+    assert.match(doc, /unreleased schema-2 API intended for v0\.2\.0/, name);
+    for (const line of doc.split("\n")) {
+      if (/\b(?:install|add)\b/.test(line) && /@0xbuff\/throughline(?:@|\s|$)/.test(line) && /^(?:npm|pnpm|yarn|bun)\s/.test(line.trim())) {
+        assert.match(line, /@0xbuff\/throughline@0\.0\.2(?=\s|$)/, name + ": mismatched install version");
+      }
+    }
+  }
+});

@@ -3,6 +3,8 @@ title: Create visualizations with TypeScript
 description: Use the public TypeScript API to show how your own algorithms and systems change.
 ---
 
+**Version scope — v0.0.2 (historical schema 1).** This page and its examples use `@0xbuff/throughline@0.0.2`, the version pinned by this documentation app. They do not describe the unreleased schema-2 API intended for v0.2.0. See [compatibility and upgrading](/docs/throughline/compatibility).
+
 The five built-in `thl` domains cover common teaching scenarios. For any other algorithm or workflow, use **`tracer()`** to construct a Program from ordinary TypeScript, then compile it into a Trace. This is a **public consumer API**: you do not need to modify Throughline, add package source files, or register anything.
 
 Choose this approach when your product already knows the values and you want to decide which intermediate steps learners should see. Throughline does **not** instrument or execute arbitrary JavaScript statements from a `thl` fence.

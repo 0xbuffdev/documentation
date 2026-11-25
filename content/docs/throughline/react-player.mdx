@@ -3,12 +3,14 @@ title: React player
 description: Render compiled traces with controls, captions, keyboard navigation, and optional sound.
 ---
 
+**Version scope — v0.0.2 (historical schema 1).** This page and its examples use `@0xbuff/throughline@0.0.2`, the version pinned by this documentation app. They do not describe the unreleased schema-2 API intended for v0.2.0. See [compatibility and upgrading](/docs/throughline/compatibility).
+
 `ThroughlinePlayer` displays a compiled `Trace` in React 19. The compiler works without React; import the player only when you need the interactive visualization.
 
 ## Install and render
 
 ~~~sh
-npm install @0xbuff/throughline react@^19 react-dom@^19
+npm install @0xbuff/throughline@0.0.2 react@^19 react-dom@^19
 ~~~
 
 ~~~tsx

@@ -4,6 +4,8 @@ description: Create step-by-step visualizations with Throughline. Find setup gui
 icon: Play
 ---
 
+**Version scope — v0.0.2 (historical schema 1).** This page and its examples use `@0xbuff/throughline@0.0.2`, the version pinned by this documentation app. They do not describe the unreleased schema-2 API intended for v0.2.0. See [compatibility and upgrading](/docs/throughline/compatibility).
+
 Throughline turns a short description of state changes into a sequence of frames you can inspect or play back. Write a `thl` block in Markdown, compile it with TypeScript, and optionally display it with the React player.
 
 Use it to explain algorithms, data structures, recursion, and system workflows. Throughline **does not run the code being explained**; you describe the changes you want to show.
@@ -19,7 +21,7 @@ This checkout scenario follows a lost provider reply, an unknown payment outcome
 Install the package:
 
 ~~~sh
-npm install @0xbuff/throughline
+npm install @0xbuff/throughline@0.0.2
 ~~~
 
 Compile a trace:

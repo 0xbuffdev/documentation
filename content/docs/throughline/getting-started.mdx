@@ -3,6 +3,8 @@ title: Getting started
 description: Install Throughline, create your first visualization, and display it in React.
 ---
 
+**Version scope — v0.0.2 (historical schema 1).** This page and its examples use `@0xbuff/throughline@0.0.2`, the version pinned by this documentation app. They do not describe the unreleased schema-2 API intended for v0.2.0. See [compatibility and upgrading](/docs/throughline/compatibility).
+
 This guide starts with the standalone compiler. You can add the React player afterward.
 
 ## Before you begin
@@ -12,10 +14,10 @@ Use an ESM project and **Node.js 24 or newer** for Node-based execution. React i
 ## 1. Install Throughline
 
 ~~~sh
-npm install @0xbuff/throughline
+npm install @0xbuff/throughline@0.0.2
 ~~~
 
-For a reproducible setup, pin `@0xbuff/throughline@0.0.2` and commit your package lockfile.
+Keep this exact version and commit your package lockfile so the examples match the installed API.
 
 ## 2. Compile a trace
 

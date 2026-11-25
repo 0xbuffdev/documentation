@@ -3,6 +3,8 @@ title: Bindings and references
 description: Explain primitive assignments, heap references, shared mutations, and rebinding with the bindings domain.
 ---
 
+**Version scope — v0.0.2 (historical schema 1).** This page and its examples use `@0xbuff/throughline@0.0.2`, the version pinned by this documentation app. They do not describe the unreleased schema-2 API intended for v0.2.0. See [compatibility and upgrading](/docs/throughline/compatibility).
+
 The `bindings` domain visualizes a **small, intentionally restricted assignment language**. It shows variable slots in a **Stack** lane and arrays/objects in a **Heap** lane. Use it to explain the difference between copying a primitive and copying a reference.
 
 It is not a JavaScript interpreter: it supports only declarations, assignments, and array `push`. Expressions, property access, branching, and arbitrary method calls are not supported.

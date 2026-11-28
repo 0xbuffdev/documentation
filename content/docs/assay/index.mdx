@@ -1,10 +1,32 @@
 ---
-title: Assay
-description: Compare technical evidence against explicit, versioned criteria.
+title: "Assay"
+description: "Evaluate technical evidence against versioned criteria and return reproducible findings."
 ---
 
-Assay is a library for checking technical evidence against explicit criteria and producing reproducible findings. It runs offline and has no runtime dependencies.
+Assay evaluates technical evidence against criteria defined by your application. Use it to check engineering exercises, measurement results, structured outputs and other technical work.
 
-The host supplies evidence and authorizes the criteria. Assay does not execute submitted programs, authenticate observations, assign grades, or issue credentials.
+You supply the criteria and observations. Assay validates the records, compares the observed values and combines required checks into an outcome. It runs offline without runtime dependencies.
 
-For the source, license, and release information, see the [Assay repository](https://github.com/0xbuffdev/assay).
+## Get started
+
+- [Install Assay](/docs/assay/installation) in a Node.js application.
+- [Evaluate your first result](/docs/assay/quickstart) with a complete example.
+- [Understand definitions, evidence and findings](/docs/assay/concepts) before integrating the evaluator.
+
+## What you can do
+
+| Task | Guide |
+| --- | --- |
+| Compare text, measurements, sets and JSON | [Define criteria](/docs/assay/criteria) |
+| Require several checks or allow alternatives | [Compose required checks](/docs/assay/composition) |
+| Evaluate results from an external runner | [Evaluate execution facts](/docs/assay/execution-facts) |
+| Collect missing public observations through an adapter | [Collect observations](/docs/assay/observation-ports) |
+| Use private expected values | [Use protected references](/docs/assay/protected-references) |
+| Attach human or model feedback | [Record qualitative reviews](/docs/assay/qualitative-review) |
+| Return a limited result to a user | [Project public results](/docs/assay/public-results) |
+
+## Scope
+
+Assay does not run submitted code, authenticate observations, assign grades or issue credentials. Your application owns execution, authorization and any decision based on the findings. Read the [security and trust model](/docs/assay/security) before accepting untrusted evidence or returning results to users.
+
+These pages describe package version `0.0.1`. See the [source repository](https://github.com/0xbuffdev/assay), [release notes](https://github.com/0xbuffdev/assay/releases/tag/v0.0.1) and [Apache-2.0 license](https://github.com/0xbuffdev/assay/blob/v0.0.1/LICENSE).

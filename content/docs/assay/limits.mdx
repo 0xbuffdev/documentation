@@ -1,0 +1,41 @@
+---
+title: "Limits"
+description: "Find the exact bounded-input limits enforced by Assay schema 4."
+---
+
+The exported `CONTRACT_LIMITS` object defines these bounds. Limits apply to the complete validated record, including nested values.
+
+| Constant | Maximum |
+| --- | ---: |
+| maxDepth | 12 |
+| maxNodes | 4,096 |
+| maxInputBytes | 262,144 |
+| maxSerializedBytes | 262,144 |
+| maxCombinedSerializedBytes | 786,432 |
+| maxStringLength | 16,384 |
+| maxIdentifierLength | 96 |
+| maxObjectKeys | 32 |
+| maxArrayLength | 128 |
+| maxCriteria | 64 |
+| maxGroups | 64 |
+| maxGroupChildren | 64 |
+| maxGroupDepth | 8 |
+| maxCompositionEdges | 127 |
+| maxReviewFeedbackBytes | 4,096 |
+| maxReviewFeedbackLength | 4,096 |
+| maxReviewCitations | 8 |
+| maxObservations | 128 |
+| maxSetItems | 128 |
+| maxEvidenceRefs | 32 |
+| maxDiagnostics | 32 |
+| maxCapturedBytes | 65,536 |
+
+Byte counts are UTF-8. Length limits on individual strings and review feedback are UTF-16 code units. The combined serialized budget applies to the complete multi-record input. A record that fits a particular field limit can still exceed a total budget.
+
+## Input restrictions
+
+The bounded snapshot rejects unknown keys, functions, accessors, unsupported prototypes, cycles, unsafe numbers and unsupported values. Numeric values must be finite; counts and offsets that require integers must be safe integers. Serialized input must be a JSON object and cannot contain duplicate keys.
+
+The decoder does not replace transport limits. Cap bytes before buffering and reject adversarial live Proxy objects. See [security and trust](/docs/assay/security).
+
+The [release constants](https://github.com/0xbuffdev/assay/blob/v0.0.1/src/contracts/common.ts) are the source for this table.

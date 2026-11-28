@@ -36,6 +36,9 @@ jobs:
       - name: Tests
         run: pnpm test
 
+      - name: Verify Assay documentation examples against the public release
+        run: node scripts/verify-assay-examples.mjs
+
       - name: Build
         run: pnpm build
 

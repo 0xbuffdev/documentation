@@ -1,0 +1,94 @@
+---
+title: "API reference"
+description: "Look up the public functions, constants and return contracts exported by Assay."
+---
+
+Import from `@0xbuff/assay`. The package root is the supported import path. All functions except `collectObservations` are synchronous. Inputs to validation and integrity functions are accepted as unknown and checked at runtime.
+
+## Evaluation
+
+| Function | Return | Behavior |
+| --- | --- | --- |
+| `evaluate(definition, evidence, references?)` | EvaluationResponse | Verify inputs, compare criteria and compose required outcomes. |
+| `inspectEvidenceCoverage(definition, evidence)` | ValidationResult of EvidenceCoverage | List missing and incomplete required criteria without evaluating them. |
+| `projectPublicResult(definition, result)` | PublicProjectionResponse | Validate a full result and create its public projection. |
+
+`EvaluationResponse` is either a complete result or an invalid-input failure. Inspect `outcome` before accessing findings. See [outcomes](/docs/assay/outcomes).
+
+## Definition integrity
+
+| Function | Return | Behavior |
+| --- | --- | --- |
+| `computeDefinitionDigest(draft)` | ValidationResult of string | Validate an unsigned draft and compute its digest. |
+| `createAssessmentDefinition(draft)` | ValidationResult of AssessmentDefinition | Validate, derive the digest and seal the definition. |
+| `verifyAssessmentDefinition(definition)` | ValidationResult of AssessmentDefinition | Verify structure and content digest. |
+
+## Evidence and reference integrity
+
+| Function | Return | Behavior |
+| --- | --- | --- |
+| `createEvidenceBundle(definition, draft)` | ValidationResult of EvidenceBundle | Verify the definition, bind observations and derive the evidence digest. |
+| `verifyEvidenceBundle(definition, evidence)` | ValidationResult of EvidenceBundle | Verify evidence digest, coverage and definition lineage. |
+| `createReferenceRecord(draft)` | ValidationResult of ReferenceRecord | Validate and seal a typed reference value. |
+| `verifyReferenceBundle(definition, bundle)` | ValidationResult of ReferenceBundle | Verify every supplied record against its authorized definition. |
+
+## Structural parsing
+
+These functions check closed record shapes and resource limits. Structural parsing does not recompute the record's digest or authenticate its source.
+
+| Function | Successful value |
+| --- | --- |
+| `parseAssessmentDefinitionDraft(input)` | AssessmentDefinitionDraft |
+| `parseAssessmentDefinition(input)` | AssessmentDefinition |
+| `parseEvidenceBundle(input)` | EvidenceBundle |
+| `parseObservationPortReport(input)` | ObservationPortReport |
+| `parseEvaluationResult(input)` | EvaluationResult |
+| `decodeSerializedRecord(input)` | Bounded immutable JSON object; duplicate keys rejected |
+
+The first five return ValidationResult of their corresponding type. The decoder returns SerializedRecordResult.
+
+## Observation collection
+
+`collectObservations(definition, evidence, port, options?)` returns a Promise of ObservationCollectionResult. Supply an optional signal in `options.signal`. The host implements the port. See [collection guide](/docs/assay/observation-ports).
+
+## Constants
+
+| Export | Value or purpose |
+| --- | --- |
+| ASSAY_SCHEMA_VERSION | 4 |
+| ASSAY_EVALUATOR_VERSION | v0.0.5 |
+| CONTRACT_LIMITS | Frozen object containing the bounds listed in [limits](/docs/assay/limits). |
+
+## Return wrappers
+
+
+```ts
+type ValidationResult<T> =
+  | Readonly<{ ok: true; value: T }>
+  | Readonly<{
+      ok: false;
+      domain: ValidationDomain;
+      diagnostics: readonly ValidationDiagnostic[];
+    }>;
+```
+
+The serialized decoder uses the same success shape but its failure has diagnostics without a domain. Projection returns an opaque failure with `reasonCode` instead of diagnostics. Collection returns evidence and receipt directly on success and has distinct failure variants.
+
+Always check `ok` before reading `value` or `evidence`.
+
+## Public types
+
+The installed declarations are the exact type reference. The following groups cover the package's public type exports.
+
+| Area | Types |
+| --- | --- |
+| Common | Completeness, ExecutionFact, ExecutionTermination, JsonValue, NumericRange, SetItemType, SetScalar |
+| Definition | AssessmentDefinition, AssessmentDefinitionDraft, CompositionChild, Criterion, CriterionBase, CriterionComposition, CriterionGroup, CriterionMode, DefinitionReference, Expected, PolicyVersion, ReferenceVisibility, TextNormalization |
+| Evidence | EvidenceBundle, EvidenceBundleDraft, Observation, ObservationBase, ObservationFact, ObservationOrigin, ObservationPortProvenance, QualitativeObservation, QualitativeReviewer, ReviewCitation |
+| References | ReferenceBundle, ReferenceRecord, ReferenceRecordDraft |
+| Collection | ObservationAbortSignal, ObservationCollectionOptions, ObservationCollectionResult, ObservationPort, ObservationPortCriterion, ObservationPortKind, ObservationPortReceipt, ObservationPortReport, ObservationPortRequest |
+| Evaluation | CriterionFinding, EvaluationFailure, EvaluationResponse, EvaluationResult, FindingOutcome, ReasonCode, TechnicalOutcome, WarningCode |
+| Projection | PublicCriterionFinding, PublicProjectionResponse, PublicReason, PublicTechnicalOutcome, PublicTechnicalResult |
+| Validation | DiagnosticCode, EvidenceCoverage, SerializedRecordResult, ValidationDiagnostic, ValidationDomain, ValidationResult |
+
+See the [public entry point](https://github.com/0xbuffdev/assay/blob/v0.0.1/src/index.ts) and [record reference](/docs/assay/contracts) for exact shapes.

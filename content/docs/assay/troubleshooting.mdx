@@ -1,0 +1,42 @@
+---
+title: "Troubleshooting"
+description: "Diagnose invalid records, unresolved comparisons and rejected public projections."
+---
+
+Start with the returned outcome. Invalid input and a technical mismatch require different fixes.
+
+## Definition or evidence creation fails
+
+Inspect the diagnostic code and safe schema path in a trusted log. Check the schema version, required fields, criterion IDs, required composition and record limits.
+
+If evidence creation reports MISMATCHED_OBSERVATION, check the observation kind, numeric unit, selected execution fact and policy correspondence. Ensure the supplied definition is the one used to create the evidence.
+
+## Evaluation returns invalid_reference
+
+Verify that the bundle's definition matches the current assessment ID, revision and revision digest. Check each reference's ID, kind, digest, unit and item type. Unknown or duplicate records reject the entire supplied bundle. An omitted reference yields an inconclusive finding when needed.
+
+## Evaluation returns inconclusive
+
+Read the required leaf findings. Missing observations, truncated captures, missing references, interrupted executions and pending review can all cause an unresolved result. Use `inspectEvidenceCoverage` to find missing or incomplete required evidence; it does not calculate group outcomes.
+
+## Numeric comparison fails unexpectedly
+
+Check the declared expected value, absolute and relative tolerance, inclusive endpoints and exact unit. Convert units in your application before creating evidence. A nonfinite relative tolerance bound returns a numeric overflow error, not a mismatch.
+
+## Collection fails or does not call the port
+
+Confirm eligible public criteria are missing. Existing facts, restricted criteria and manual or qualitative reviews are not collection candidates. Verify that the returned report matches request lineage and scope, uses only requested IDs, and supplies the required provenance fields.
+
+For OBSERVATION_PORT_ERROR, inspect your adapter's private logs. For OBSERVATION_CANCELLED, check the host signal and termination handling. See [collection](/docs/assay/observation-ports).
+
+## Public outcome is withheld
+
+At least one criterion is restricted. This is expected even if all required public criteria pass. Do not reveal the private aggregate to work around withholding.
+
+## Public projection rejects a result
+
+Verify the exact authorized definition and use a complete result produced by `evaluate`. Do not modify finding order, reason codes, lineage, warnings or the aggregate. Projection rejects invalid-input failures and inconsistent records.
+
+## Report a reproducible problem
+
+Use the [issue tracker](https://github.com/0xbuffdev/assay/issues) with the package version, runtime version, a minimal synthetic reproduction and the outcome or diagnostic code. Remove private references, secrets and real learner evidence. Report security issues through the [security policy](https://github.com/0xbuffdev/assay/blob/v0.0.1/SECURITY.md).

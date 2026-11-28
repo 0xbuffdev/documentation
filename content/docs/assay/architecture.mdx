@@ -1,0 +1,61 @@
+---
+title: "Architecture"
+description: "Follow the validation, comparison, aggregation and projection pipeline."
+---
+
+Assay has a synchronous evaluation core and an optional asynchronous collector. The host decides when to call each operation.
+
+## Evaluation
+
+```mermaid
+flowchart TD
+  D[Authorized definition] --> V[Verify definition]
+  V --> R[Verify supplied references]
+  X[Optional reference bundle] --> R
+  R --> B[Verify evidence and coverage]
+  I[Evidence bundle] --> B
+  B --> C[Compare all criteria]
+  C --> A[Compose required outcomes]
+  A --> F[Technical result]
+  V -. invalid .-> G[Diagnostic failure]
+  R -. invalid .-> G
+  B -. invalid .-> G
+  F --> P[Optional public projection]
+```
+
+Definition verification happens first, followed by verification of the entire supplied reference bundle and then the evidence. Invalid inputs return diagnostic failures without findings. Valid inputs reach comparators and the required composition engine.
+
+The public projection validates the definition and result correspondence, recomputes the aggregate and emits only permitted fields. It does not receive the evidence, so it cannot authenticate the evaluation.
+
+## Observation acquisition
+
+```mermaid
+sequenceDiagram
+  participant H as Host
+  participant A as Assay collector
+  participant P as Host port
+  H->>A: Definition and existing evidence
+  A->>A: Verify inputs and select missing public facts
+  alt Eligible facts exist
+    A->>P: Bounded request
+    P-->>A: Report and claimed provenance
+    A->>A: Validate and seal combined evidence
+  end
+  A-->>H: Evidence and optional receipt
+  H->>H: Authorize use and call evaluate
+```
+
+No port is invoked when no eligible facts are missing. The collector never receives authority to run code by itself; the injected port is host-owned.
+
+## Source modules
+
+| Module | Responsibility |
+| --- | --- |
+| contracts | Versioned records and public types |
+| validation | Bounded snapshots, structural checks and coverage |
+| integrity | Canonical JSON and SHA-256 verification |
+| evaluation | Comparison and group aggregation |
+| observation | Optional fact acquisition |
+| projection | Result correspondence and public field selection |
+
+The [release source](https://github.com/0xbuffdev/assay/tree/v0.0.1/src) contains the implementation. See [security and trust](/docs/assay/security) for responsibilities outside the library.

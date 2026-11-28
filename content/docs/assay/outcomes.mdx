@@ -1,0 +1,69 @@
+---
+title: "Outcomes and errors"
+description: "Interpret technical outcomes, criterion reasons, warnings and validation failures."
+---
+
+## Evaluation outcomes
+
+| Outcome | Meaning |
+| --- | --- |
+| pass | The required composition is satisfied. |
+| fail | The required composition has a decisive mismatch. |
+| inconclusive | The required composition cannot be resolved. |
+| evaluation_error | A comparison error determines the required composition. |
+| invalid_definition | The definition is malformed or fails integrity checks. |
+| invalid_reference | Supplied reference material is invalid or does not match. |
+| invalid_evidence | Evidence is malformed, incompatible or fails integrity checks. |
+
+The first four return complete findings; the last three return only diagnostics. The required aggregate uses the precedence in [composition](/docs/assay/composition).
+
+## Criterion findings
+
+| Finding outcome | Reason code | Meaning |
+| --- | --- | --- |
+| pass | MATCH | Observed value matches. |
+| fail | VALUE_MISMATCH | Observed value does not match. |
+| inconclusive | REFERENCE_UNAVAILABLE | Required reference value unavailable. |
+| inconclusive | EVIDENCE_MISSING | Observation absent. |
+| inconclusive | EVIDENCE_TRUNCATED | Observation incomplete. |
+| inconclusive | ASSERTION_INCOMPLETE | Execution assertion incomplete. |
+| inconclusive | EXECUTION_UNVERIFIED | Assertion claim cannot establish correctness. |
+| inconclusive | EXECUTION_INCOMPLETE | Selected run did not complete. |
+| inconclusive | ARTIFACT_MISSING | Required manual artifact absent. |
+| inconclusive | REVIEW_REQUIRED | Manual or qualitative review needed. |
+| error | COMPARATOR_ERROR | Comparison could not complete. |
+| error | NUMERIC_OVERFLOW | Relative tolerance bound overflowed. |
+
+`ADVISORY_UNRESOLVED` is the sole warning code; unresolved advisory findings do not determine the binding outcome.
+
+## Public reasons
+
+| Public reason | Technical codes |
+| --- | --- |
+| match | MATCH |
+| mismatch | VALUE_MISMATCH |
+| missing_evidence | EVIDENCE_MISSING, ARTIFACT_MISSING |
+| incomplete_evidence | EVIDENCE_TRUNCATED, ASSERTION_INCOMPLETE, EXECUTION_INCOMPLETE |
+| review_needed | REVIEW_REQUIRED |
+| unavailable | REFERENCE_UNAVAILABLE, EXECUTION_UNVERIFIED |
+| evaluation_error | COMPARATOR_ERROR, NUMERIC_OVERFLOW |
+
+Public aggregate `withheld` means the definition contains restricted criteria. It does not indicate their outcomes.
+
+## Validation diagnostics
+
+Diagnostics contain a safe schema path and a closed code, without submitted values. ValidationResult domains are invalid_definition, invalid_evidence, invalid_reference and invalid_result.
+
+| Category | Codes |
+| --- | --- |
+| Serialized input | INVALID_JSON, DUPLICATE_KEY |
+| Resource bounds | INPUT_TOO_DEEP, INPUT_TOO_LARGE, TOO_MANY_ITEMS, TOO_MANY_DIAGNOSTICS |
+| Unsafe input | UNSUPPORTED_INPUT, UNSAFE_OBJECT, UNSAFE_KEY, UNSAFE_NUMBER |
+| Shape | UNEXPECTED_FIELD, MISSING_FIELD, INVALID_TYPE, INVALID_VALUE, UNSUPPORTED_VERSION |
+| Definition | DUPLICATE_ID, EMPTY_REQUIRED_CRITERIA, RESTRICTED_LITERAL |
+| Integrity | DEFINITION_DIGEST_MISMATCH, REFERENCE_DIGEST_MISMATCH, EVIDENCE_DIGEST_MISMATCH |
+| Correspondence | MISMATCHED_DEFINITION, MISMATCHED_ORIGIN, UNKNOWN_REFERENCE, MISMATCHED_REFERENCE, UNKNOWN_CRITERION, MISMATCHED_OBSERVATION |
+
+Collection errors use OBSERVATION_PORT_ERROR or OBSERVATION_CANCELLED. Projection failures return PUBLIC_PROJECTION_REJECTED without diagnostic details.
+
+See [troubleshooting](/docs/assay/troubleshooting) for recovery steps.

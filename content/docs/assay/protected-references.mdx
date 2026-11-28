@@ -1,0 +1,107 @@
+---
+title: "Use protected references"
+description: "Store expected values separately and evaluate them through content-bound references."
+---
+
+Restricted objective criteria cannot contain literal expected values. Create a sealed reference record, bind its ID and digest into the criterion, and pass the record to the evaluator from an authorized environment.
+
+## Create a restricted comparison
+
+This complete example uses a fixture as the private expected value. Real protected answers belong in a store that the submitting user cannot access.
+
+```js
+// assay-docs: runnable
+import {
+  createReferenceRecord,
+  createAssessmentDefinition,
+  createEvidenceBundle,
+  evaluate,
+  projectPublicResult,
+} from "@0xbuff/assay";
+
+const reference = createReferenceRecord({
+  schemaVersion: 4,
+  referenceId: "expected-output",
+  kind: "text",
+  value: "ok",
+});
+if (!reference.ok) throw new Error("Invalid reference");
+
+const created = createAssessmentDefinition({
+  schemaVersion: 4,
+  assessmentId: "protected-check",
+  revision: "rev1",
+  policyVersion: "composed-required-v1",
+  criteria: [{
+    id: "output",
+    kind: "exact_text",
+    mode: "required",
+    visibility: "restricted",
+    parameters: {
+      expected: {
+        type: "reference",
+        referenceId: reference.value.referenceId,
+        referenceDigest: reference.value.referenceDigest,
+      },
+    },
+  }],
+  composition: {
+    rootGroupId: "root",
+    groups: [{
+      id: "root",
+      operator: "all",
+      children: [{ kind: "criterion", id: "output" }],
+    }],
+  },
+});
+if (!created.ok) throw new Error("Invalid definition");
+
+const definition = created.value;
+const references = {
+  schemaVersion: 4,
+  definition: {
+    assessmentId: definition.assessmentId,
+    revision: definition.revision,
+    revisionDigest: definition.revisionDigest,
+  },
+  references: [reference.value],
+};
+
+const prepared = createEvidenceBundle(definition, {
+  schemaVersion: 4,
+  observations: [{
+    criterionId: "output",
+    evidenceRef: "capture-1",
+    kind: "text",
+    completeness: "complete",
+    value: "ok",
+  }],
+});
+if (!prepared.ok) throw new Error("Invalid evidence");
+
+const result = evaluate(definition, prepared.value, references);
+const projected = projectPublicResult(definition, result);
+if (result.outcome !== "pass" || !projected.ok ||
+    projected.value.outcome !== "withheld") {
+  throw new Error("Unexpected outcome");
+}
+console.log(result.outcome, projected.value.outcome);
+```
+
+Expected output in the trusted development terminal:
+
+```text
+pass withheld
+```
+
+Do not log the private outcome in a user-accessible environment.
+
+## Reference verification
+
+The bundle identifies the exact assessment, revision and revision digest. Each record must match its declared kind, ID and digest; numeric units and set item types must also agree. References may be absent. An absent required reference yields an inconclusive finding when its comparison is needed.
+
+A malformed, unknown, duplicate or substituted supplied record returns `invalid_reference` before evidence comparison. Verify separately with `verifyReferenceBundle(definition, references)` when storing or loading records.
+
+## Disclosure
+
+Keep the definition, references, evidence and full result in the trusted host. A digest of a low-entropy secret can be guessed; it is not encryption. See [content integrity](/docs/assay/integrity) and [public results](/docs/assay/public-results).

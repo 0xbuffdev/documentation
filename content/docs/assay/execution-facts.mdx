@@ -1,0 +1,85 @@
+---
+title: "Evaluate execution facts"
+description: "Compare captured output, exit status and other typed facts supplied by a runner."
+---
+
+Your application runs the program, captures its output and supplies the observations. Assay compares these facts using the same objective comparators as other evidence.
+
+## Select a fact
+
+Set `executionFact` on the criterion and the corresponding observation.
+
+| Selector | Criterion kinds | Observation kind |
+| --- | --- | --- |
+| stdout, stderr | exact_text, normalized_text | text |
+| exit_status | number_with_tolerance, number_range | number |
+| boolean_property | boolean_equality | boolean |
+| structured_stdout, structured_stderr | json_equality | json |
+
+An exit status must be a signed safe integer without a unit. A Boolean property is identified by its criterion ID. Structured stream values are JSON supplied by your application; Assay does not parse captured stdout for you.
+
+## Evaluate captured output
+
+The following example uses a fixture for stdout. In production, obtain the value and termination state from your isolated runner.
+
+```js
+// assay-docs: runnable
+import { createAssessmentDefinition, createEvidenceBundle, evaluate } from "@0xbuff/assay";
+
+const created = createAssessmentDefinition({
+  schemaVersion: 4,
+  assessmentId: "command-output",
+  revision: "rev1",
+  policyVersion: "composed-required-v1",
+  criteria: [{
+    id: "output",
+    kind: "exact_text",
+    executionFact: "stdout",
+    mode: "required",
+    visibility: "public",
+    parameters: { expected: { type: "literal", value: "ok" } },
+  }],
+  composition: {
+    rootGroupId: "root",
+    groups: [{
+      id: "root",
+      operator: "all",
+      children: [{ kind: "criterion", id: "output" }],
+    }],
+  },
+});
+if (!created.ok) throw new Error("Invalid definition");
+
+const prepared = createEvidenceBundle(created.value, {
+  schemaVersion: 4,
+  observations: [{
+    criterionId: "output",
+    evidenceRef: "stdout-1",
+    kind: "text",
+    executionFact: "stdout",
+    completeness: "complete",
+    value: "ok",
+    origin: {
+      kind: "independent",
+      sourceRef: "fixture",
+      runRef: "run-1",
+      termination: "exited",
+    },
+  }],
+});
+if (!prepared.ok) throw new Error("Invalid evidence");
+
+const result = evaluate(created.value, prepared.value);
+if (result.outcome !== "pass") throw new Error("Expected pass");
+console.log(result.outcome);
+```
+
+## Interrupted or incomplete runs
+
+A timeout or crash produces an inconclusive finding for selected facts. Truncated captures use `EVIDENCE_TRUNCATED` first. The evaluator does not invent an exit status or output value when one is unavailable.
+
+For the same source and run, complete observations of the same selected stream or exit status must agree. Known stream truncation invalidates contradictory complete claims, even if an observation omits provenance. Stdout and stderr truncation are tracked separately. Exit status does not depend on stream capture.
+
+The older assertion-shaped `observed_execution` criterion remains inconclusive even when an assertion claims confirmation. Use selected objective facts to compare actual values.
+
+See [observation ports](/docs/assay/observation-ports) for optional acquisition and [host security responsibilities](/docs/assay/security) for execution isolation.

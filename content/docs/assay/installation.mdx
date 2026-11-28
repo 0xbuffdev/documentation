@@ -1,0 +1,60 @@
+---
+title: "Installation"
+description: "Install the released Assay package and configure an ESM application."
+---
+
+## Requirements
+
+- Node.js 24 or later.
+- An ECMAScript module (ESM) application. Use a file ending in `.mjs`, or set `"type": "module"` in your package.json.
+- A package manager with access to the public npm registry.
+
+Assay has no runtime dependencies. TypeScript declarations ship with the package; you do not need a separate types package.
+
+## Install
+
+Use one of these commands:
+
+```sh
+npm install @0xbuff/assay@0.0.1
+```
+
+
+```sh
+pnpm add @0xbuff/assay@0.0.1
+```
+
+
+```sh
+yarn add @0xbuff/assay@0.0.1
+```
+
+Pin the release and commit your lockfile when reproducibility matters.
+
+## Verify the installation
+
+Create `check.mjs`:
+
+```js
+// assay-docs: runnable
+import { ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION } from "@0xbuff/assay";
+
+console.log(ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION);
+```
+
+
+```sh
+node check.mjs
+```
+
+Expected output:
+
+```text
+4 v0.0.5
+```
+
+The package, schema and evaluator versions identify different things. See [versions and compatibility](/docs/assay/compatibility).
+
+## Next step
+
+[Evaluate a measurement](/docs/assay/quickstart) using the installed package.

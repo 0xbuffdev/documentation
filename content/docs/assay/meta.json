@@ -1,0 +1,8 @@
+{
+  "title": "Assay",
+  "description": "Compare technical evidence against explicit, versioned criteria.",
+  "root": true,
+  "pages": [
+    "index"
+  ]
+}

@@ -21,6 +21,8 @@ import {
 	SITE,
 } from "../../lib/site";
 import { docs } from "../../lib/docs";
+import { filterPublishedProductRoots } from "../../lib/docs-navigation";
+import { redirectToDefaultDocs } from "../../lib/docs-entry.server";
 import { resolveDocPage, source } from "../../lib/source";
 import { getDocumentedProducts } from "../../lib/catalog.server";
 import type { Route } from "./+types/$";
@@ -31,8 +33,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
 	// Redirect bare /docs to the default product.
 	if (rawSlug === "" || rawSlug === "/") {
-		if (!published[0]) throw new Response("No published documentation", { status: 404 });
-		throw redirect(`${ROUTES.docs}/${published[0].slug}`);
+		throw redirectToDefaultDocs(request, published);
 	}
 
 	const isMarkdownRequested =
@@ -53,13 +54,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
 	const tree = source.getPageTree();
 	const availableUrls = new Set(published.map(({ slug }) => `${ROUTES.docs}/${slug}`));
-	const sidebarTree = {
-		...tree,
-		children: tree.children.filter((node) =>
-			node.type === "folder" &&
-			node.children.some((child) => child.type === "page" && availableUrls.has(child.url.replace(/\/$/, ""))),
-		),
-	};
+	const sidebarTree = filterPublishedProductRoots(tree, availableUrls);
 
 	return {
 		toc: (await page.data.load()).toc as unknown as TOCItemType[],
@@ -78,11 +73,16 @@ export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
 	return data;
 }
 
-export const meta: Route.MetaFunction = ({  loaderData }) => {
-	const data = loaderData
+export const meta: Route.MetaFunction = ({ loaderData: data }) => {
+	if (!data) {
+		return [
+			{ title: `Documentation unavailable | ${SITE.name}` },
+			{ name: "robots", content: "noindex, nofollow" },
+		];
+	}
 	return createPageMeta({
 		title: data.title,
-		description: data?.description || SITE.description,
+		description: data.description || SITE.description,
 		path: data.url,
 		imagePath: data.imagePath,
 	});
@@ -114,7 +114,7 @@ function Content({
 		>
 			<DocsTitle>{page.title}</DocsTitle>
 			<DocsDescription>{page.description}</DocsDescription>
-			<div className="not-prose my-4 flex flex-row items-center gap-2 border-b border-dashed border-border pb-4">
+			<div className="not-prose my-4 flex flex-wrap items-center gap-2 border-b border-border pb-4">
 				<LLMCopyButton markdownUrl={markdownUrl} />
 				<ViewOptions markdownUrl={markdownUrl} githubUrl={githubUrl} />
 			</div>
@@ -125,7 +125,7 @@ function Content({
 					})}
 				/>
 			</DocsBody>
-			<div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-dashed border-border pt-4 text-xs text-muted-foreground dark:border-border">
+			<div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 text-xs text-muted-foreground">
 				<EditOnGitHub href={githubUrl} />
 			</div>
 		</DocsPage>

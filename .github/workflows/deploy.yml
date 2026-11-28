@@ -131,8 +131,14 @@ jobs:
             *) echo "::error::Invalid smoke-test target"; exit 1 ;;
           esac
 
-          curl --fail --silent --show-error "$URL/" >/dev/null
-          curl --fail --silent --show-error --location "$URL/docs" >/dev/null
+          root="$(curl --silent --show-error --output /dev/null --write-out '%{http_code} %{redirect_url}' "$URL/")"
+          test "$root" = "302 $URL/docs/assay"
+          docs="$(curl --silent --show-error --output /dev/null --write-out '%{http_code} %{redirect_url}' "$URL/docs")"
+          test "$docs" = "302 $URL/docs/assay"
+          landing="$(curl --fail --silent --show-error --location --max-redirs 1 --output /dev/null --write-out '%{http_code} %{num_redirects} %{url_effective}' "$URL/")"
+          test "$landing" = "200 1 $URL/docs/assay"
+          curl --fail --silent --show-error "$URL/docs/assay" >/dev/null
+          curl --fail --silent --show-error "$URL/docs/throughline" >/dev/null
           curl --fail --silent --show-error "$URL/llms.txt" >/dev/null
           curl --fail --silent --show-error "$URL/llms-full.txt" >/dev/null
           curl --fail --silent --show-error "$URL/robots.txt" >/dev/null

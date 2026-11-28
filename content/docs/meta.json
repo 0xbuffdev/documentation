@@ -2,6 +2,7 @@
   "title": "0xBUFF Documentation",
   "description": "Guides, examples, and API references for 0xBUFF tools.",
   "pages": [
+    "assay",
     "throughline",
     "..."
   ]

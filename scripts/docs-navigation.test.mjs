@@ -20,7 +20,8 @@ test("global navigation lists the first tool and discovers future tools", async 
   assert.equal(meta.title, "0xBUFF Documentation");
   assert.ok(typeof meta.description === "string" && meta.description.trim());
   assert.ok(Array.isArray(meta.pages));
-  assert.equal(meta.pages[0], "throughline");
+  assert.equal(meta.pages[0], "assay");
+  assert.ok(meta.pages.includes("throughline"));
   assert.equal(meta.pages.at(-1), "...", "Fumadocs must include future tool folders");
   assert.equal(new Set(meta.pages).size, meta.pages.length, "duplicate global entries");
   for (const entry of meta.pages.filter((name) => name !== "...")) {

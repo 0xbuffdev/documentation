@@ -1,51 +1,35 @@
 ---
-title: "Installation"
-description: "Install Assay and start evaluating technical evidence."
+title: "Introduction"
+description: "Understand what Assay evaluates and how it fits into your application."
 ---
 
-Assay evaluates technical evidence against versioned criteria. It runs offline, has no runtime dependencies, and leaves execution, authorization and decisions to your application.
+Assay evaluates technical evidence against criteria you define. It returns reproducible findings that describe whether observed results match your expectations.
 
-## Requirements
+Use Assay to check program output, verify measurements, compare structured data or build assessment systems. It runs offline and has no runtime dependencies.
 
-Node.js 24 or later and ECMAScript modules (ESM). Use an `.mjs` file or set `"type": "module"` in your package.json. TypeScript declarations are included.
+## How it works
 
-## Install
-
-```sh
-npm install @0xbuff/assay@0.0.1
+```mermaid
+flowchart LR
+  D[Assessment definition] --> E[Assay]
+  O[Evidence] --> E
+  E --> R[Technical result]
 ```
 
-```sh
-pnpm add @0xbuff/assay@0.0.1
-```
+An assessment definition specifies the expected results and how required checks are combined. Evidence contains the observed values. Assay validates the records, compares the values and returns a finding for each criterion and an overall technical outcome.
 
-```sh
-yarn add @0xbuff/assay@0.0.1
-```
+## Capabilities
 
-## Verify the installation
+- Compare text, numbers, sets, booleans and JSON.
+- Combine required criteria using all or any groups.
+- Evaluate captured execution facts and collect observations through a host-supplied adapter.
+- Record advisory human or model reviews.
+- Protect expected values, verify content digests and project public results.
 
-Save this as `check.mjs`.
+Your application supplies evidence, authorizes criteria and decides how to use the findings. Assay does not execute submitted programs, authenticate observations, assign grades or issue credentials.
 
-```js
-// assay-docs: runnable
-import { ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION } from "@0xbuff/assay";
+## Get started
 
-console.log(ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION);
-```
+Follow [Getting started](/docs/assay/getting-started) to install Assay and run your first evaluation.
 
-Run `node check.mjs`. Expected output:
-
-```text
-4 v0.0.5
-```
-
-## Next steps
-
-- [Evaluation](/docs/assay/evaluation): define criteria, supply evidence and evaluate your first result.
-- [Observations](/docs/assay/observations): integrate captured execution facts, optional adapters and reviews.
-- [Integrity and security](/docs/assay/integrity): protect expectations and control disclosure.
-
-These pages describe release `0.0.1`, schema 4, evaluator semantics `v0.0.5` and policy `composed-required-v1`. Older schemas are unsupported. Pin the package and keep your lockfile for reproducibility.
-
-[Source](https://github.com/0xbuffdev/assay) · [Changelog](https://github.com/0xbuffdev/assay/blob/v0.0.1/CHANGELOG.md) · [Apache-2.0 license](https://github.com/0xbuffdev/assay/blob/v0.0.1/LICENSE)
+[Source](https://github.com/0xbuffdev/assay) · [Changelog](https://github.com/0xbuffdev/assay/blob/main/CHANGELOG.md) · [License](https://github.com/0xbuffdev/assay/blob/main/LICENSE)

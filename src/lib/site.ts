@@ -1,5 +1,5 @@
 import docsConfig from "./docs-config.json";
-import { DEFAULT_DOCS_PRODUCT } from "./docs-navigation";
+import { DEFAULT_DOCS_PATH } from "./docs-navigation";
 
 /**
  * Canonical site identity, navigation, and static-route metadata for the docs
@@ -59,7 +59,7 @@ export const ROUTES = {
 	home: "/",
 	docs: "/docs",
 	/** Default product shown when navigating to /docs. */
-	docsDefault: `/docs/${DEFAULT_DOCS_PRODUCT}`,
+	docsDefault: DEFAULT_DOCS_PATH,
 	/** Legacy path. Redirected permanently to the canonical company-site manifesto. */
 	manifesto: "/manifesto",
 	docsOg: docsConfig.docsImageRoute,

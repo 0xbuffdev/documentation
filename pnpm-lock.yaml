@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@0xbuff/content-contract':
-        specifier: npm:@0xbuffdev/content-contract@0.1.0
-        version: '@0xbuffdev/content-contract@0.1.0'
       '@0xbuff/throughline':
         specifier: 0.0.2
         version: 0.0.2(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -137,9 +134,6 @@ packages:
         optional: true
       react-dom:
         optional: true
-
-  '@0xbuffdev/content-contract@0.1.0':
-    resolution: {integrity: sha512-hKh8qOBHPEwFNKrGhVt8tNrU2psqSKDxt0GkOcMERCE9f6d/imQJBhbiVEXHtsIPZuIFIQzrOaNdNgXldyfB7Q==, tarball: https://npm.pkg.github.com/download/@0xbuffdev/content-contract/0.1.0/6b9d70e4ee7c488df28fe78d7095e7ad5dd63c94}
 
   '@antfu/install-pkg@2.1.0':
     resolution: {integrity: sha512-sdg9NxU3zR4Mnawfbc/x6GB5Wf17WYud5qOuEuxXjaKpYpMkISSJEjItGebXJ2bQ4DIcly4NYH23mtkGJjvKUw==}
@@ -4644,10 +4638,6 @@ snapshots:
       cn: 0.4.0
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
-
-  '@0xbuffdev/content-contract@0.1.0':
-    dependencies:
-      zod: 4.6.7
 
   '@antfu/install-pkg@2.1.0':
     dependencies:

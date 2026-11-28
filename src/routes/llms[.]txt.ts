@@ -1,11 +1,8 @@
-import { getDocumentedProducts } from "../lib/catalog.server";
 import { SITE } from "../lib/site";
 import { source } from "../lib/source";
-import type { Route } from "./+types/llms[.]txt";
 
-export async function loader({ context }: Route.LoaderArgs) {
-	const allowed = new Set((await getDocumentedProducts(context)).map((p) => p.slug));
-	const pages = source.getPages().filter((page) => allowed.has(page.slugs[0]));
+export async function loader() {
+	const pages = source.getPages();
 	const index = [
 		"# 0xBUFF Documentation",
 		"",

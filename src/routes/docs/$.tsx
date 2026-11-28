@@ -15,25 +15,18 @@ import { baseOptions } from "../../lib/layout.shared";
 import { createPageMeta } from "../../lib/meta";
 import { createRelativeLink } from "../../lib/relative-link";
 import { getPageImagePath } from "../../lib/shared";
-import {
-	CONTENT_DIRS,
-	ROUTES,
-	SITE,
-} from "../../lib/site";
+import { CONTENT_DIRS, SITE } from "../../lib/site";
 import { docs } from "../../lib/docs";
-import { filterPublishedProductRoots } from "../../lib/docs-navigation";
 import { redirectToDefaultDocs } from "../../lib/docs-entry.server";
 import { resolveDocPage, source } from "../../lib/source";
-import { getDocumentedProducts } from "../../lib/catalog.server";
 import type { Route } from "./+types/$";
 
-export async function loader({ params, request, context }: Route.LoaderArgs) {
-	const published = await getDocumentedProducts(context);
+export async function loader({ params, request }: Route.LoaderArgs) {
 	const rawSlug = (params as Record<string, string | undefined>)["*"] ?? "";
 
 	// Redirect bare /docs to the default product.
 	if (rawSlug === "" || rawSlug === "/") {
-		throw redirectToDefaultDocs(request, published);
+		throw redirectToDefaultDocs(request);
 	}
 
 	const isMarkdownRequested =
@@ -42,19 +35,11 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 		request.headers.get("Accept")?.includes("text/markdown");
 
 	const { page } = resolveDocPage(rawSlug);
-	if (!published.some(({ slug }) => slug === page.slugs[0])) {
-		throw new Response("Not found", { status: 404 });
-	}
-
 	if (isMarkdownRequested) {
 		throw redirect(`/llms.mdx/docs/${page.slugs.join("/")}`, {
 			headers: { Vary: "Accept" },
 		});
 	}
-
-	const tree = source.getPageTree();
-	const availableUrls = new Set(published.map(({ slug }) => `${ROUTES.docs}/${slug}`));
-	const sidebarTree = filterPublishedProductRoots(tree, availableUrls);
 
 	return {
 		toc: (await page.data.load()).toc as unknown as TOCItemType[],
@@ -63,7 +48,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 		title: page.data.title,
 		description: page.data.description,
 		imagePath: getPageImagePath(page.slugs),
-		pageTree: await source.serializePageTree(sidebarTree),
+		pageTree: await source.serializePageTree(source.getPageTree()),
 	};
 }
 

@@ -23,12 +23,6 @@
 		"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>",
 		"DOCS_ENV": "production"
 	},
-	"r2_buckets": [
-		{
-			"binding": "CONTENT",
-			"bucket_name": "content"
-		}
-	],
 	"env": {
 		"staging": {
 			"routes": [
@@ -41,13 +35,7 @@
 				"DOCS_ENV": "staging",
 				"RESEND_FROM": "0xBUFF Team <team@mail.0xbuff.com>",
 				"RESEND_SEGMENT_ID": ""
-			},
-			"r2_buckets": [
-				{
-					"binding": "CONTENT",
-					"bucket_name": "content-staging"
-				}
-			]
+			}
 		}
 	}
 }

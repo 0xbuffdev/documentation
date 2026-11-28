@@ -1,28 +1,21 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-import type { Root } from "fumadocs-core/page-tree";
-import { DEFAULT_DOCS_PRODUCT, filterPublishedProductRoots, hasDefaultDocsProduct } from "./docs-navigation.ts";
+import { DEFAULT_DOCS_PATH, DEFAULT_DOCS_PRODUCT, defaultDocsLocation } from "./docs-navigation.ts";
 
-test("Assay is the explicit default regardless of catalog ordering", () => {
+test("the default product has a local MDX overview and appears first in navigation", async () => {
 	assert.equal(DEFAULT_DOCS_PRODUCT, "assay");
-	assert.equal(hasDefaultDocsProduct([{ slug: "throughline" }, { slug: "assay" }]), true);
-	assert.equal(hasDefaultDocsProduct([{ slug: "assay" }, { slug: "throughline" }]), true);
-	assert.equal(hasDefaultDocsProduct([{ slug: "throughline" }]), false);
-	assert.equal(hasDefaultDocsProduct([]), false);
+	assert.equal(DEFAULT_DOCS_PATH, "/docs/assay");
+	const root = new URL("../../content/docs/", import.meta.url);
+	const meta = JSON.parse(await readFile(new URL("meta.json", root), "utf8"));
+	assert.equal(meta.pages[0], DEFAULT_DOCS_PRODUCT);
+	const overview = await readFile(new URL(`${DEFAULT_DOCS_PRODUCT}/index.mdx`, root), "utf8");
+	assert.match(overview, /^---\r?\n/);
 });
 
-test("published product folders retain index-only roots and exclude unpublished roots", () => {
-	const page = (slug: string) => ({ type: "page" as const, name: slug, url: `/docs/${slug}` });
-	const tree: Root = {
-		name: "Docs",
-		children: [
-			{ type: "folder", name: "Assay", root: true, index: page("assay"), children: [] },
-			{ type: "folder", name: "Throughline", root: true, children: [page("throughline")] },
-			{ type: "folder", name: "Unpublished", root: true, index: page("unpublished"), children: [] },
-		],
-	};
-	const filtered = filterPublishedProductRoots(tree, new Set(["/docs/assay", "/docs/throughline"]));
-	assert.deepEqual(filtered.children.map((node) => node.name), ["Assay", "Throughline"]);
-	assert.equal(tree.children.length, 3);
-	assert.deepEqual(filterPublishedProductRoots(tree, new Set()).children, []);
+test("both entry paths resolve directly to Assay and preserve query strings", () => {
+	for (const path of ["/", "/docs", "/docs/"]) {
+		assert.equal(defaultDocsLocation(`https://docs.0xbuff.com${path}`), "/docs/assay");
+		assert.equal(defaultDocsLocation(`https://docs.0xbuff.com${path}?q=a%20b&x=1`), "/docs/assay?q=a%20b&x=1");
+	}
 });

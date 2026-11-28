@@ -15,9 +15,48 @@ flowchart LR
   A --> F[Technical result]
 ```
 
-## Quick start
+Start with the [quick start](/docs/assay#quick-start) for a complete text comparison.
 
-After [installation](/docs/assay), save this example as `calibration.mjs`. It checks a caller-supplied measurement against an inclusive voltage range.
+## Criteria
+
+Every criterion declares an ID, kind, mode, visibility and parameters. Required criteria participate in composition; advisory findings do not. Public criteria may appear in public projections. Restricted objective criteria must use [protected references](/docs/assay/integrity#protected-references).
+
+| Kind | Observation | Parameters |
+| --- | --- | --- |
+| exact_text | text | expected |
+| normalized_text | text | expected, normalization |
+| number_with_tolerance | number | expected, tolerance, optional unit |
+| number_range | number | expected, optional unit |
+| set_equivalence | set | expected, itemType, order, duplicates |
+| boolean_equality | boolean | expected |
+| json_equality | json | expected |
+| observed_execution | execution | assertions |
+| manual_evidence | manual | review: required |
+| qualitative_review | qualitative_review | reviewPolicyId, reviewPolicyVersion |
+
+The first seven kinds compare a literal or content-bound reference expectation. The remaining kinds produce unresolved findings.
+
+### Text
+
+Exact comparison uses UTF-16 code-unit equality. Normalized text applies the declared transformations to both values, in this order: line endings (`preserve` or `lf`), case (`sensitive` or `fold`), Unicode (`none`, `NFC` or `NFKC`), whitespace (`preserve` or `collapse`) and trim (`none` or `both`). Case folding uses JavaScript lowercase conversion, not full Unicode case folding.
+
+### Numbers
+
+Tolerance is inclusive: the absolute difference must not exceed the greater of the absolute tolerance and the relative tolerance multiplied by the magnitude of the expected value.
+
+```ts
+parameters: {
+  expected: { type: "literal", value: 100 },
+  tolerance: { absolute: 2, relative: 0.05 },
+  unit: "mV",
+}
+```
+
+A value of 105 passes; 106 fails. Both tolerances are finite and nonnegative. Numeric ranges specify finite min/max and both inclusion flags; equal endpoints require both flags to be true. Observations must use exactly the declared unit, including its absence. No string coercion or unit conversion occurs. A nonfinite relative bound produces `NUMERIC_OVERFLOW`.
+
+### Example: numeric range
+
+This complete example evaluates a caller-supplied measurement against an inclusive voltage range. Save it as `calibration.mjs`.
 
 ```js
 // assay-docs: runnable
@@ -79,48 +118,10 @@ if (!evidence.ok) throw new Error("Invalid evidence");
 const result = evaluate(definition.value, evidence.value);
 const view = projectPublicResult(definition.value, result);
 if (!view.ok) throw new Error("Projection rejected");
-if (view.value.outcome !== "pass") throw new Error("Expected pass");
 console.log(view.value.outcome);
 ```
 
-Run `node calibration.mjs`. The output is `pass`. Change the observation to 103 and remove the assertion requiring a pass to see `fail`. With no observations, the outcome is `inconclusive`. Changing the unit to V instead of mV rejects the evidence.
-
-## Criteria
-
-Every criterion declares an ID, kind, mode, visibility and parameters. Required criteria participate in composition; advisory findings do not. Public criteria may appear in public projections. Restricted objective criteria must use [protected references](/docs/assay/integrity#protected-references).
-
-| Kind | Observation | Parameters |
-| --- | --- | --- |
-| exact_text | text | expected |
-| normalized_text | text | expected, normalization |
-| number_with_tolerance | number | expected, tolerance, optional unit |
-| number_range | number | expected, optional unit |
-| set_equivalence | set | expected, itemType, order, duplicates |
-| boolean_equality | boolean | expected |
-| json_equality | json | expected |
-| observed_execution | execution | assertions |
-| manual_evidence | manual | review: required |
-| qualitative_review | qualitative_review | reviewPolicyId, reviewPolicyVersion |
-
-The first seven kinds compare a literal or content-bound reference expectation. The remaining kinds produce unresolved findings.
-
-### Text
-
-Exact comparison uses UTF-16 code-unit equality. Normalized text applies the declared transformations to both values, in this order: line endings (`preserve` or `lf`), case (`sensitive` or `fold`), Unicode (`none`, `NFC` or `NFKC`), whitespace (`preserve` or `collapse`) and trim (`none` or `both`). Case folding uses JavaScript lowercase conversion, not full Unicode case folding.
-
-### Numbers
-
-Tolerance is inclusive: the absolute difference must not exceed the greater of the absolute tolerance and the relative tolerance multiplied by the magnitude of the expected value.
-
-```ts
-parameters: {
-  expected: { type: "literal", value: 100 },
-  tolerance: { absolute: 2, relative: 0.05 },
-  unit: "mV",
-}
-```
-
-A value of 105 passes; 106 fails. Both tolerances are finite and nonnegative. Numeric ranges specify finite min/max and both inclusion flags; equal endpoints require both flags to be true. Observations must use exactly the declared unit, including its absence. No string coercion or unit conversion occurs. A nonfinite relative bound produces `NUMERIC_OVERFLOW`.
+Run `node calibration.mjs`. The output is `pass`. Change the observation to 103 to see `fail`. With no observations, the outcome is `inconclusive`. Changing the unit to V instead of mV rejects the evidence.
 
 ### Sets, booleans and JSON
 

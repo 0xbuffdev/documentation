@@ -27,3 +27,19 @@ test("Assay internal links resolve and complete examples are marked", async () =
   }
   assert.ok(runnable >= 5, "Expected complete executable examples");
 });
+
+test("Getting started introduces Assay and installs the current package", async () => {
+  const source = await readFile(join(directory, "index.mdx"), "utf8");
+  assert.match(source, /^title: "Getting started"$/m);
+  for (const heading of ["Installation", "Quick start"]) {
+    assert.ok(source.includes("## " + heading));
+  }
+  for (const command of ["npm install", "pnpm add", "yarn add"]) {
+    assert.ok(source.includes(command + " @0xbuff/assay\n"), command);
+  }
+  for (const file of files) {
+    const text = await readFile(join(directory, file), "utf8");
+    assert.doesNotMatch(text, /(?:npm install|pnpm add|yarn add)\s+@0xbuff\/assay@\S+/, file);
+  }
+  assert.match(source, /const result = evaluate\(/);
+});

@@ -1,51 +1,107 @@
 ---
-title: "Installation"
-description: "Install Assay and start evaluating technical evidence."
+title: "Getting started"
+description: "Learn what Assay does, install it and evaluate your first result."
 ---
 
-Assay evaluates technical evidence against versioned criteria. It runs offline, has no runtime dependencies, and leaves execution, authorization and decisions to your application.
+Assay evaluates technical evidence against criteria you define. Use it to check program output, measurements, structured data and engineering work.
 
-## Requirements
+An assessment definition describes what you expect. Evidence contains what you observed. Assay compares the two and returns a technical result with findings for each criterion. It runs offline with no runtime dependencies.
 
-Node.js 24 or later and ECMAScript modules (ESM). Use an `.mjs` file or set `"type": "module"` in your package.json. TypeScript declarations are included.
+Your application supplies the evidence and authorizes the criteria. Assay does not execute submitted programs, authenticate observations or award grades.
 
-## Install
+## Installation
+
+Assay requires Node.js 24 or later and ECMAScript modules (ESM). TypeScript declarations are included.
 
 ```sh
-npm install @0xbuff/assay@0.0.1
+npm install @0xbuff/assay
 ```
 
 ```sh
-pnpm add @0xbuff/assay@0.0.1
+pnpm add @0xbuff/assay
 ```
 
 ```sh
-yarn add @0xbuff/assay@0.0.1
+yarn add @0xbuff/assay
 ```
 
-## Verify the installation
+## Quick start
 
-Save this as `check.mjs`.
+The following example checks whether an observed text value matches the expected output. Save it as `assessment.mjs`.
 
 ```js
 // assay-docs: runnable
-import { ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION } from "@0xbuff/assay";
+import {
+  createAssessmentDefinition,
+  createEvidenceBundle,
+  evaluate,
+} from "@0xbuff/assay";
 
-console.log(ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION);
+const definition = createAssessmentDefinition({
+  schemaVersion: 4,
+  assessmentId: "output-check",
+  revision: "rev1",
+  policyVersion: "composed-required-v1",
+  criteria: [{
+    id: "output",
+    kind: "exact_text",
+    mode: "required",
+    visibility: "public",
+    parameters: { expected: { type: "literal", value: "ok" } },
+  }],
+  composition: {
+    rootGroupId: "root",
+    groups: [{
+      id: "root",
+      operator: "all",
+      children: [{ kind: "criterion", id: "output" }],
+    }],
+  },
+});
+if (!definition.ok) throw new Error("Invalid definition");
+
+const evidence = createEvidenceBundle(definition.value, {
+  schemaVersion: 4,
+  observations: [{
+    criterionId: "output",
+    evidenceRef: "observation-1",
+    kind: "text",
+    completeness: "complete",
+    value: "ok",
+  }],
+});
+if (!evidence.ok) throw new Error("Invalid evidence");
+
+const result = evaluate(definition.value, evidence.value);
+console.log(result.outcome);
 ```
 
-Run `node check.mjs`. Expected output:
+Run the example:
+
+```sh
+node assessment.mjs
+```
+
+Expected output:
 
 ```text
-4 v0.0.5
+pass
 ```
+
+Change the observation's value to `"error"` to get `fail`, or remove the observation to get `inconclusive`.
+
+## What happened
+
+1. `createAssessmentDefinition` validates the criterion and seals the definition.
+2. `createEvidenceBundle` binds the observation to that definition.
+3. `evaluate` verifies the records, compares the values and combines the required findings.
+
+Keep the full evaluation result private. Use [public projection](/docs/assay/integrity#public-projection) and authorize disclosure before returning findings to users.
 
 ## Next steps
 
-- [Evaluation](/docs/assay/evaluation): define criteria, supply evidence and evaluate your first result.
-- [Observations](/docs/assay/observations): integrate captured execution facts, optional adapters and reviews.
-- [Integrity and security](/docs/assay/integrity): protect expectations and control disclosure.
+- [Evaluation](/docs/assay/evaluation): define comparisons, combine criteria and interpret outcomes.
+- [Observations](/docs/assay/observations): supply execution facts, collect observations and record reviews.
+- [API reference](/docs/assay/api): look up available functions and types.
 
-These pages describe release `0.0.1`, schema 4, evaluator semantics `v0.0.5` and policy `composed-required-v1`. Older schemas are unsupported. Pin the package and keep your lockfile for reproducibility.
-
-[Source](https://github.com/0xbuffdev/assay) · [Changelog](https://github.com/0xbuffdev/assay/blob/v0.0.1/CHANGELOG.md) · [Apache-2.0 license](https://github.com/0xbuffdev/assay/blob/v0.0.1/LICENSE)
+[Source](https://github.com/0xbuffdev/assay) · [Changelog](https://github.com/0xbuffdev/assay/blob/main/CHANGELOG.md) · [License](https://github.com/0xbuffdev/assay/blob/main/LICENSE)

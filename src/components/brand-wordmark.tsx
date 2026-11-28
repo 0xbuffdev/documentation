@@ -1,7 +1,7 @@
 import { SITE } from "~/lib/site";
 
 export function BrandWordmark({
-	accentClassName = "text-primary",
+	accentClassName = "text-brand-orange",
 }: {
 	accentClassName?: string;
 }) {

@@ -115,7 +115,7 @@ export function Footer() {
 						"text-foreground/[0.04] leading-none tracking-tighter xl:text-[14rem]",
 					)}
 				>
-					<BrandWordmark accentClassName="text-primary/20" />
+					<BrandWordmark accentClassName="text-brand-orange/20" />
 				</p>
 			</div>
 

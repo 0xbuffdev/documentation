@@ -29,7 +29,7 @@ export const SITE = {
 	defaultImagePath: BRAND_ICON_PATH,
 	defaultImageAlt: `${BRAND_PREFIX}${BRAND_ACCENT} mark in white and orange on a charcoal background`,
 	primaryColor: "#ff7148",
-	themeColor: "#14120f",
+	themeColor: "#0a0a0a",
 	locale: "en_US",
 	faviconPath: "/favicon.svg",
 	faviconIcoPath: "/favicon.ico",

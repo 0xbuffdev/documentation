@@ -21,7 +21,8 @@ import {
 	SITE,
 } from "../../lib/site";
 import { docs } from "../../lib/docs";
-import { filterPublishedProductRoots, hasDefaultDocsProduct } from "../../lib/docs-navigation";
+import { filterPublishedProductRoots } from "../../lib/docs-navigation";
+import { redirectToDefaultDocs } from "../../lib/docs-entry.server";
 import { resolveDocPage, source } from "../../lib/source";
 import { getDocumentedProducts } from "../../lib/catalog.server";
 import type { Route } from "./+types/$";
@@ -32,16 +33,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
 	// Redirect bare /docs to the default product.
 	if (rawSlug === "" || rawSlug === "/") {
-		if (!hasDefaultDocsProduct(published)) {
-			throw new Response("Default documentation is not published", {
-				status: 503,
-				headers: { "Cache-Control": "no-store" },
-			});
-		}
-		throw redirect(ROUTES.docsDefault + new URL(request.url).search, {
-			status: 302,
-			headers: { "Cache-Control": "no-store" },
-		});
+		throw redirectToDefaultDocs(request, published);
 	}
 
 	const isMarkdownRequested =

@@ -1,7 +1,7 @@
-import { redirect } from "react-router";
-import { ROUTES } from "../lib/site";
+import { getDocumentedProducts } from "../lib/catalog.server";
+import { redirectToDefaultDocs } from "../lib/docs-entry.server";
 import type { Route } from "./+types/index";
 
-export function loader({ request }: Route.LoaderArgs) {
-	return redirect(ROUTES.docs + new URL(request.url).search, 308);
+export async function loader({ request, context }: Route.LoaderArgs) {
+	return redirectToDefaultDocs(request, await getDocumentedProducts(context));
 }

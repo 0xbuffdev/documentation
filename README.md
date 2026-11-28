@@ -9,6 +9,9 @@ Fumadocs owns the documentation navigation. The repository is organized by tool,
 ```text
 content/docs/
 ├── meta.json                  # Shared tool order
+├── assay/                   # Default product
+│   ├── meta.json
+│   └── index.mdx
 ├── throughline/
 │   ├── meta.json              # Throughline navigation
 │   ├── index.mdx              # Tool overview
@@ -19,7 +22,7 @@ content/docs/
     └── *.mdx
 ```
 
-- The root `content/docs/meta.json` lists Throughline first and uses Fumadocs' `"..."` entry to include future tools automatically.
+- The root `content/docs/meta.json` lists Assay first, then Throughline and uses Fumadocs' `"..."` entry to include future tools automatically.
 - Give every tool its own `content/docs/<slug>/` directory with an `index.mdx` and `meta.json`. Set `"root": true` in the tool's metadata so its navigation is separate from other tools. Give it a clear title, a short description, and an explicit `pages` order. Section separators such as `"---Reference---"` group related pages without changing URLs.
 - Use stable filenames: Fumadocs derives each public address from its MDX path. Navigation changes must not unnecessarily change existing addresses.
 - New tools also need a published product entry in the R2 catalog, with no outbound `url`, before they appear on the public site. Content files alone do not publish a product.
@@ -37,7 +40,7 @@ The showcase is deliberately limited to a few pages and does not automatically t
 
 The private `0xbuffdev/content` repository owns the product records and publishes them to independent 0xBUFF buckets via its validated content pipeline. Documentation reads `manifest.json` and the referenced `products/manifest.json` through its Worker `CONTENT` R2 binding and validates them with `@0xbuffdev/content-contract@0.1.0` (imported as `@0xbuff/content-contract`).
 
-Only published product records with **no outbound `url`** and a matching `content/docs/<slug>/index.mdx` are listed. The R2 catalog controls the homepage, documentation routes, sidebar, sitemap, search index and LLM exports. The MDX articles themselves are compiled from this repository and require a documentation deployment to update. Catalog changes appear after the 60-second edge cache expires; no documentation rebuild is needed for catalog changes alone.
+Only published product records with **no outbound `url`** and a matching `content/docs/<slug>/index.mdx` are listed. The R2 catalog controls documentation routes, sidebar, sitemap, search index and LLM exports. `/` permanently redirects to `/docs`; `/docs` temporarily redirects to `/docs/assay` only when Assay is published. Missing Assay returns 503 rather than falling back to another tool. Publish the Assay catalog record to each target R2 bucket before deploying this change. The MDX articles themselves are compiled from this repository and require a documentation deployment to update. Catalog changes appear after the 60-second edge cache expires; no documentation rebuild is needed for catalog changes alone.
 
 The two production-facing buckets are **not interchangeable**:
 
@@ -102,7 +105,7 @@ Pull requests continue to typecheck, test, build **both** target configurations,
 
 Cloudflare deployment requires repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` with the minimum permissions for Workers and the configured custom domains. Newsletter `RESEND_API_KEY` is a **Worker secret**, set independently for the production and staging Workers. The staging `RESEND_SEGMENT_ID` is intentionally empty to prevent accidental subscriptions to the production audience; configure a separate staging segment before testing signup delivery.
 
-Before either deployment, independently confirm the relevant R2 bucket exists, contains a valid `manifest.json` and `products/manifest.json`, is accessible to that Worker's `CONTENT` binding, and that Cloudflare domains and credentials are provisioned. CI cannot create or verify those Cloudflare resources by reading the repository. The deployment smoke tests request the homepage and `/docs` to check real R2 access, plus the LLM, search, robots, sitemap and subscription routes. Staging serves `robots.txt` with `Disallow: /` and sets `X-Robots-Tag: noindex, nofollow, noarchive` on Worker responses.
+Before either deployment, independently confirm the relevant R2 bucket exists, contains a valid `manifest.json` and `products/manifest.json`, is accessible to that Worker's `CONTENT` binding, and that Cloudflare domains and credentials are provisioned. CI cannot create or verify those Cloudflare resources by reading the repository. The deployment smoke tests verify both redirects and request `/docs/assay` to check real R2 access, plus the LLM, search, robots, sitemap and subscription routes. Staging serves `robots.txt` with `Disallow: /` and sets `X-Robots-Tag: noindex, nofollow, noarchive` on Worker responses.
 
 ## Bundle strategy
 

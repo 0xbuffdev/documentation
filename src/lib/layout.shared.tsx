@@ -7,8 +7,7 @@ import { PRIMARY_NAVIGATION, ROUTES, SITE } from "./site";
 export function baseOptions(): BaseLayoutProps {
 	return {
 		nav: {
-			url: ROUTES.home,
-			transparentMode: "top",
+			url: ROUTES.docsDefault,
 			title: (
 				<span className="font-display font-bold tracking-tight">
 					<BrandWordmark />{" "}

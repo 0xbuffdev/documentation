@@ -9,9 +9,9 @@ const pages = new Set(files.map((name) => name.slice(0, -4)));
 
 test("Assay has distinct entry, task, explanation and reference pages", async () => {
   const meta = JSON.parse(await readFile(join(directory, "meta.json"), "utf8"));
-  const listed = meta.pages.filter((entry) => !entry.startsWith("---"));
+  const listed = meta.pages;
   assert.deepEqual([...listed].sort(), [...pages].sort());
-  assert.deepEqual(listed, ["index", "evaluation", "observations", "integrity", "api", "contracts"]);
+  assert.deepEqual(listed, ["index", "getting-started", "evaluation", "observations", "integrity", "api", "contracts"]);
 });
 
 test("Assay internal links resolve and complete examples are marked", async () => {
@@ -28,8 +28,12 @@ test("Assay internal links resolve and complete examples are marked", async () =
   assert.ok(runnable >= 5, "Expected complete executable examples");
 });
 
-test("Getting started introduces Assay and installs the current package", async () => {
-  const source = await readFile(join(directory, "index.mdx"), "utf8");
+test("Introduction and Getting started have distinct purposes", async () => {
+  const intro = await readFile(join(directory, "index.mdx"), "utf8");
+  assert.match(intro, /^title: "Introduction"$/m);
+  assert.doesNotMatch(intro, /(?:npm install|pnpm add|yarn add)\s+@0xbuff\/assay/);
+  assert.ok(intro.includes("/docs/assay/getting-started"));
+  const source = await readFile(join(directory, "getting-started.mdx"), "utf8");
   assert.match(source, /^title: "Getting started"$/m);
   for (const heading of ["Installation", "Quick start"]) {
     assert.ok(source.includes("## " + heading));

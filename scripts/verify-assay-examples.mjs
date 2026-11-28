@@ -9,7 +9,7 @@ const version = "0.0.1";
 const directory = "content/docs/assay";
 const temporary = await mkdtemp(join(tmpdir(), "assay-docs-"));
 const expected = new Map([
-  ["index.mdx", ["pass"]],
+  ["getting-started.mdx", ["pass"]],
   ["evaluation.mdx", ["pass"]],
   ["observations.mdx", ["pass", "pass"]],
   ["integrity.mdx", ["pass withheld"]],

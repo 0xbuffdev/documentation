@@ -1,0 +1,102 @@
+---
+title: "Getting started"
+description: "Install Assay and evaluate your first result."
+---
+
+This guide takes you from installation to a working text comparison.
+
+## Installation
+
+Assay requires Node.js 24 or later and ECMAScript modules (ESM). TypeScript declarations are included.
+
+```sh
+npm install @0xbuff/assay
+```
+
+```sh
+pnpm add @0xbuff/assay
+```
+
+```sh
+yarn add @0xbuff/assay
+```
+
+## Quick start
+
+The following example checks whether an observed text value matches the expected output. Save it as `assessment.mjs`.
+
+```js
+// assay-docs: runnable
+import {
+  createAssessmentDefinition,
+  createEvidenceBundle,
+  evaluate,
+} from "@0xbuff/assay";
+
+const definition = createAssessmentDefinition({
+  schemaVersion: 4,
+  assessmentId: "output-check",
+  revision: "rev1",
+  policyVersion: "composed-required-v1",
+  criteria: [{
+    id: "output",
+    kind: "exact_text",
+    mode: "required",
+    visibility: "public",
+    parameters: { expected: { type: "literal", value: "ok" } },
+  }],
+  composition: {
+    rootGroupId: "root",
+    groups: [{
+      id: "root",
+      operator: "all",
+      children: [{ kind: "criterion", id: "output" }],
+    }],
+  },
+});
+if (!definition.ok) throw new Error("Invalid definition");
+
+const evidence = createEvidenceBundle(definition.value, {
+  schemaVersion: 4,
+  observations: [{
+    criterionId: "output",
+    evidenceRef: "observation-1",
+    kind: "text",
+    completeness: "complete",
+    value: "ok",
+  }],
+});
+if (!evidence.ok) throw new Error("Invalid evidence");
+
+const result = evaluate(definition.value, evidence.value);
+console.log(result.outcome);
+```
+
+Run the example:
+
+```sh
+node assessment.mjs
+```
+
+Expected output:
+
+```text
+pass
+```
+
+Change the observation's value to `"error"` to get `fail`, or remove the observation to get `inconclusive`.
+
+## What happened
+
+1. `createAssessmentDefinition` validates the criterion and seals the definition.
+2. `createEvidenceBundle` binds the observation to that definition.
+3. `evaluate` verifies the records, compares the values and combines the required findings.
+
+Keep the full evaluation result private. Use [public projection](/docs/assay/integrity#public-projection) and authorize disclosure before returning findings to users.
+
+## Next steps
+
+- [Evaluation](/docs/assay/evaluation): define comparisons, combine criteria and interpret outcomes.
+- [Observations](/docs/assay/observations): supply execution facts, collect observations and record reviews.
+- [API reference](/docs/assay/api): look up available functions and types.
+

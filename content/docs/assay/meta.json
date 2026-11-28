@@ -4,10 +4,10 @@
   "root": true,
   "pages": [
     "index",
+    "getting-started",
     "evaluation",
     "observations",
     "integrity",
-    "---Reference---",
     "api",
     "contracts"
   ]

@@ -1,12 +1,8 @@
 import { ROUTES, toSiteUrl } from "../lib/site";
-import { getDocumentedProducts } from "../lib/catalog.server";
-import type { Route } from "./+types/sitemap[.]xml";
 import { source } from "../lib/source";
 
-export async function loader({ context }: Route.LoaderArgs) {
-	const products = await getDocumentedProducts(context);
-	const allowed = new Set(products.map((product) => product.slug));
-	const pages = source.getPages().filter((page) => allowed.has(page.slugs[0]));
+export async function loader() {
+	const pages = source.getPages();
 
 	const urls = [
 		{ loc: toSiteUrl(ROUTES.llms), changefreq: "weekly", priority: "0.6" },

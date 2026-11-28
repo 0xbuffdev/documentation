@@ -1,6 +1,6 @@
 name: CI
 
-# Pull-request checks. Deploys belong to deploy.yml (push to main/staging).
+# Pull-request checks. Deployments require an explicit workflow dispatch.
 on:
   pull_request:
     branches: [main, staging]
@@ -11,7 +11,6 @@ concurrency:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   checks:
@@ -30,8 +29,6 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Typecheck
         run: pnpm typecheck
@@ -48,7 +45,7 @@ jobs:
       - name: Report production client bundle sizes
         run: pnpm bundle:report
 
-      - name: Build staging and verify isolated R2 binding
+      - name: Build staging and verify isolated Worker configuration
         run: |
           pnpm build:staging
           node scripts/check-deploy-config.mjs staging

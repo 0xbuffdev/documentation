@@ -99,3 +99,13 @@ Fumadocs MDX uses `async: true`, so individual documents are compiled into page-
 ## Design system
 
 The shared tokens, fonts and base styles in `src/app.css` are synchronized from [the platform design system](https://github.com/0xbuffdev/platform/blob/16241087830ddd0c96ae7dd7ba81023cd8892365/packages/ui/src/styles/app.css). Keep the Fumadocs adapter, local source detection and documentation-specific rules when updating that snapshot. The documentation application does not import the platform's private workspace packages.
+
+## Assay documentation
+
+The Assay collection documents the public release [v0.0.1](https://github.com/0xbuffdev/assay/tree/v0.0.1). Use its package exports, contract types, tests and versioned guides as the technical source of truth. Do not document unreleased behavior as available.
+
+Keep the Assay sidebar compact: installation is the index, evaluation covers criteria and composition, observations covers execution and reviews, integrity covers protected references and disclosure, and two reference pages cover the API and contracts. Use headings within those pages for related topics; add a page only for a distinct reader need. Use sentence-case titles, direct language, explicit prerequisites and expected results. Keep code fragments distinct from complete examples. Use Mermaid for data flows and trust boundaries, not decorative diagrams.
+
+The editorial approach draws on [Vercel's writing guidelines](https://github.com/vercel-labs/writing-guidelines), [Cloudflare's style guide](https://developers.cloudflare.com/style-guide/), [Mintlify's developer documentation checklist](https://www.mintlify.com/library/developer-documentation-best-practices) and [Diátaxis](https://diataxis.fr/). Apply the Content repository's humanizer skill when editing prose.
+
+Run `pnpm test` for the documentation structure and internal-link checks. Run `node scripts/verify-assay-examples.mjs` to install the pinned public release in a temporary directory, execute the marked examples, and compare the documented API and limits with the installed package. This requires registry access and Node 24; it does not add Assay to the documentation application's dependency graph. CI and the release workflow run both checks. Update the example verification and all affected version references when adopting a new Assay release.

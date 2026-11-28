@@ -1,10 +1,51 @@
 ---
-title: Assay
-description: Compare technical evidence against explicit, versioned criteria.
+title: "Installation"
+description: "Install Assay and start evaluating technical evidence."
 ---
 
-Assay is a library for checking technical evidence against explicit criteria and producing reproducible findings. It runs offline and has no runtime dependencies.
+Assay evaluates technical evidence against versioned criteria. It runs offline, has no runtime dependencies, and leaves execution, authorization and decisions to your application.
 
-The host supplies evidence and authorizes the criteria. Assay does not execute submitted programs, authenticate observations, assign grades, or issue credentials.
+## Requirements
 
-For the source, license, and release information, see the [Assay repository](https://github.com/0xbuffdev/assay).
+Node.js 24 or later and ECMAScript modules (ESM). Use an `.mjs` file or set `"type": "module"` in your package.json. TypeScript declarations are included.
+
+## Install
+
+```sh
+npm install @0xbuff/assay@0.0.1
+```
+
+```sh
+pnpm add @0xbuff/assay@0.0.1
+```
+
+```sh
+yarn add @0xbuff/assay@0.0.1
+```
+
+## Verify the installation
+
+Save this as `check.mjs`.
+
+```js
+// assay-docs: runnable
+import { ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION } from "@0xbuff/assay";
+
+console.log(ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION);
+```
+
+Run `node check.mjs`. Expected output:
+
+```text
+4 v0.0.5
+```
+
+## Next steps
+
+- [Evaluation](/docs/assay/evaluation): define criteria, supply evidence and evaluate your first result.
+- [Observations](/docs/assay/observations): integrate captured execution facts, optional adapters and reviews.
+- [Integrity and security](/docs/assay/integrity): protect expectations and control disclosure.
+
+These pages describe release `0.0.1`, schema 4, evaluator semantics `v0.0.5` and policy `composed-required-v1`. Older schemas are unsupported. Pin the package and keep your lockfile for reproducibility.
+
+[Source](https://github.com/0xbuffdev/assay) · [Changelog](https://github.com/0xbuffdev/assay/blob/v0.0.1/CHANGELOG.md) · [Apache-2.0 license](https://github.com/0xbuffdev/assay/blob/v0.0.1/LICENSE)

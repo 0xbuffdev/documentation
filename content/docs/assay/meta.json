@@ -1,8 +1,14 @@
 {
   "title": "Assay",
-  "description": "Compare technical evidence against explicit, versioned criteria.",
+  "description": "Evaluate technical evidence against explicit, versioned criteria.",
   "root": true,
   "pages": [
-    "index"
+    "index",
+    "evaluation",
+    "observations",
+    "integrity",
+    "---Reference---",
+    "api",
+    "contracts"
   ]
 }

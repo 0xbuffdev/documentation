@@ -11,6 +11,7 @@ import { redirect } from "react-router";
 import type { TOCItemType } from "fumadocs-core/toc";
 import { LLMCopyButton, ViewOptions } from "../../components/ai/page-actions";
 import { getMDXComponents } from "../../components/mdx";
+import { CompanyNavigation } from "../../components/company-navigation";
 import { baseOptions } from "../../lib/layout.shared";
 import { createPageMeta } from "../../lib/meta";
 import { createRelativeLink } from "../../lib/relative-link";
@@ -94,7 +95,8 @@ function Content({
 	return (
 		<DocsPage
 			toc={toc}
-			tableOfContent={{ style: "clerk" }}
+			tableOfContent={{ style: "clerk", footer: <CompanyNavigation /> }}
+			tableOfContentPopover={{ footer: <CompanyNavigation /> }}
 			className="max-w-3xl px-4 sm:px-6"
 		>
 			<DocsTitle>{page.title}</DocsTitle>

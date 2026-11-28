@@ -70,37 +70,27 @@ export const ROUTES = {
 	searchIndex: "/search-index.json",
 } as const;
 
-/** Primary navigation rendered by the Fumadocs layouts. */
+/** Outbound company links displayed below the current page navigation. */
 export const PRIMARY_NAVIGATION = [
 	{
-		text: "Documentation",
-		url: ROUTES.docs,
-		active: "nested-url",
-		on: "all",
-	},
-	{
-		text: "0xBUFF ↗",
+		text: "0xBUFF",
 		url: SITE.companyUrl,
 		external: true,
-		on: "all",
 	},
 	{
-		text: "0xNAND ↗",
+		text: "0xNAND",
 		url: "https://nand.0xbuff.com",
 		external: true,
-		on: "all",
 	},
 	{
-		text: "Changelog ↗",
+		text: "Changelog",
 		url: COMPANY_LINKS.changelog,
 		external: true,
-		on: "all",
 	},
 	{
-		text: "Notes ↗",
+		text: "Notes",
 		url: COMPANY_LINKS.notes,
 		external: true,
-		on: "all",
 	},
 ] as const;
 

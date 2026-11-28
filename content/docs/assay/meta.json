@@ -4,28 +4,11 @@
   "root": true,
   "pages": [
     "index",
-    "installation",
-    "quickstart",
-    "concepts",
-    "---Evaluate---",
-    "criteria",
-    "composition",
-    "evidence",
-    "execution-facts",
-    "protected-references",
-    "observation-ports",
-    "qualitative-review",
-    "public-results",
-    "---Understand---",
-    "architecture",
+    "evaluation",
+    "observations",
     "integrity",
-    "security",
     "---Reference---",
     "api",
-    "contracts",
-    "outcomes",
-    "limits",
-    "compatibility",
-    "troubleshooting"
+    "contracts"
   ]
 }

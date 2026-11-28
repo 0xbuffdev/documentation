@@ -9,11 +9,10 @@ const version = "0.0.1";
 const directory = "content/docs/assay";
 const temporary = await mkdtemp(join(tmpdir(), "assay-docs-"));
 const expected = new Map([
-  ["installation.mdx", "4 v0.0.5"],
-  ["quickstart.mdx", "pass"],
-  ["execution-facts.mdx", "pass"],
-  ["protected-references.mdx", "pass withheld"],
-  ["observation-ports.mdx", "pass"],
+  ["index.mdx", ["4 v0.0.5"]],
+  ["evaluation.mdx", ["pass"]],
+  ["observations.mdx", ["pass", "pass"]],
+  ["integrity.mdx", ["pass withheld"]],
 ]);
 try {
   const npm = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -33,7 +32,7 @@ try {
   for (const name of Object.keys(assay)) {
     assert.match(api, new RegExp("\\b" + name + "\\b"), "Undocumented export: " + name);
   }
-  const limits = await readFile(join(directory, "limits.mdx"), "utf8");
+  const limits = await readFile(join(directory, "contracts.mdx"), "utf8");
   for (const [name, value] of Object.entries(assay.CONTRACT_LIMITS)) {
     assert.ok(limits.includes("| " + name + " | " + value.toLocaleString("en-US") + " |"),
       "Incorrect or missing limit: " + name);
@@ -43,11 +42,12 @@ try {
   for (const file of (await readdir(directory)).filter((name) => name.endsWith(".mdx"))) {
     const source = await readFile(join(directory, file), "utf8");
     const examples = [...source.matchAll(/^\x60\x60\x60js\r?\n\/\/ assay-docs: runnable\r?\n([\s\S]*?)^\x60\x60\x60\s*$/gm)];
+    assert.equal(examples.length, expected.get(file)?.length ?? 0, file + " example count");
     for (const [index, match] of examples.entries()) {
       const path = join(temporary, file.replace(".mdx", "-" + index + ".mjs"));
       await writeFile(path, match[1]);
       const output = execFileSync(process.execPath, [path], { encoding: "utf8", timeout: 10_000 }).trim();
-      assert.equal(output, expected.get(file), file + " example " + index);
+      assert.equal(output, expected.get(file)?.[index], file + " example " + index);
       seen.add(file);
       console.log("Verified " + file + ": " + output);
     }

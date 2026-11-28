@@ -1,6 +1,6 @@
 ---
-title: "Record reference"
-description: "Look up the fields of definitions, evidence, references and evaluation records."
+title: "Contracts and errors"
+description: "Record shapes, outcomes, diagnostics and resource limits."
 ---
 
 All versioned public records use schema version 4. Record fields are closed: unknown fields, unsupported versions and invalid values are rejected. The TypeScript declarations in the released package define the exact unions.
@@ -36,9 +36,9 @@ All criteria have `id: string`, `kind`, `mode: "required" | "advisory"`, `visibi
 | manual_evidence | review: required |
 | qualitative_review | reviewPolicyId, reviewPolicyVersion |
 
-An expected value is either a literal with type and value, or a reference with type, referenceId and referenceDigest. Restricted objective criteria require the reference form. See [criteria](/docs/assay/criteria) for value types and rules.
+An expected value is either a literal with type and value, or a reference with type, referenceId and referenceDigest. Restricted objective criteria require the reference form. See [criteria](/docs/assay/evaluation#criteria) for value types and rules.
 
-Composition contains rootGroupId and groups. A group has id, operator (all or any), and children, each with kind (criterion or group) and id. See [composition](/docs/assay/composition).
+Composition contains rootGroupId and groups. A group has id, operator (all or any), and children, each with kind (criterion or group) and id. See [composition](/docs/assay/evaluation#composition).
 
 ## EvidenceBundle
 
@@ -67,7 +67,7 @@ Common fields are criterionId, evidenceRef, kind and completeness (complete or t
 | manual | artifactRefs: string array |
 | qualitative_review | origin, reviewPolicyId, reviewPolicyVersion, reviewer, uncertainty, feedback, citations |
 
-Objective selected facts also carry executionFact and an origin with runRef and termination. Other observations may have an origin as permitted by the scope rules. See [evidence](/docs/assay/evidence), [execution facts](/docs/assay/execution-facts) and [qualitative reviews](/docs/assay/qualitative-review).
+Objective selected facts also carry executionFact and an origin with runRef and termination. Other observations may have an origin as permitted by the scope rules. See [evidence](/docs/assay/evaluation#evidence), [execution facts](/docs/assay/observations#execution-facts) and [qualitative reviews](/docs/assay/observations#qualitative-reviews).
 
 ## ReferenceRecord and ReferenceBundle
 
@@ -85,7 +85,7 @@ An invalid-input failure has outcome and diagnostics only. Do not assume that de
 
 Request fields: schemaVersion, definition, optional artifactDigest, criteria and limits.maxCapturedBytes. Each requested criterion includes criterionId, kind and applicable unit, itemType, assertionIds or executionFact.
 
-Report fields: schemaVersion, definition, optional artifactDigest, provenance, observations and termination where required. A receipt contains definition, evidenceDigest, evidenceRefs, optional termination/artifactDigest and provenance. See [report requirements](/docs/assay/observation-ports).
+Report fields: schemaVersion, definition, optional artifactDigest, provenance, observations and termination where required. A receipt contains definition, evidenceDigest, evidenceRefs, optional termination/artifactDigest and provenance. See [report requirements](/docs/assay/observations#observation-ports).
 
 ## PublicTechnicalResult
 
@@ -95,6 +95,127 @@ Report fields: schemaVersion, definition, optional artifactDigest, provenance, o
 | outcome | pass, fail, inconclusive, evaluation_error or withheld |
 | findings | Array of criterionId, outcome and reason |
 
-No evidence references or private warnings are included. See [projection](/docs/assay/public-results).
+No evidence references or private warnings are included. See [projection](/docs/assay/integrity#public-projection).
 
 The [contract source](https://github.com/0xbuffdev/assay/tree/v0.0.1/src/contracts) defines the complete field unions and types.
+
+## Outcomes and errors
+
+### Evaluation outcomes
+
+| Outcome | Meaning |
+| --- | --- |
+| pass | The required composition is satisfied. |
+| fail | The required composition has a decisive mismatch. |
+| inconclusive | The required composition cannot be resolved. |
+| evaluation_error | A comparison error determines the required composition. |
+| invalid_definition | The definition is malformed or fails integrity checks. |
+| invalid_reference | Supplied reference material is invalid or does not match. |
+| invalid_evidence | Evidence is malformed, incompatible or fails integrity checks. |
+
+The first four return complete findings; the last three return only diagnostics. The required aggregate uses the precedence in [composition](/docs/assay/evaluation#composition).
+
+### Criterion findings
+
+| Finding outcome | Reason code | Meaning |
+| --- | --- | --- |
+| pass | MATCH | Observed value matches. |
+| fail | VALUE_MISMATCH | Observed value does not match. |
+| inconclusive | REFERENCE_UNAVAILABLE | Required reference value unavailable. |
+| inconclusive | EVIDENCE_MISSING | Observation absent. |
+| inconclusive | EVIDENCE_TRUNCATED | Observation incomplete. |
+| inconclusive | ASSERTION_INCOMPLETE | Execution assertion incomplete. |
+| inconclusive | EXECUTION_UNVERIFIED | Assertion claim cannot establish correctness. |
+| inconclusive | EXECUTION_INCOMPLETE | Selected run did not complete. |
+| inconclusive | ARTIFACT_MISSING | Required manual artifact absent. |
+| inconclusive | REVIEW_REQUIRED | Manual or qualitative review needed. |
+| error | COMPARATOR_ERROR | Comparison could not complete. |
+| error | NUMERIC_OVERFLOW | Relative tolerance bound overflowed. |
+
+`ADVISORY_UNRESOLVED` is the sole warning code; unresolved advisory findings do not determine the binding outcome.
+
+### Public reasons
+
+| Public reason | Technical codes |
+| --- | --- |
+| match | MATCH |
+| mismatch | VALUE_MISMATCH |
+| missing_evidence | EVIDENCE_MISSING, ARTIFACT_MISSING |
+| incomplete_evidence | EVIDENCE_TRUNCATED, ASSERTION_INCOMPLETE, EXECUTION_INCOMPLETE |
+| review_needed | REVIEW_REQUIRED |
+| unavailable | REFERENCE_UNAVAILABLE, EXECUTION_UNVERIFIED |
+| evaluation_error | COMPARATOR_ERROR, NUMERIC_OVERFLOW |
+
+Public aggregate `withheld` means the definition contains restricted criteria. It does not indicate their outcomes.
+
+### Validation diagnostics
+
+Diagnostics contain a safe schema path and a closed code, without submitted values. ValidationResult domains are invalid_definition, invalid_evidence, invalid_reference and invalid_result.
+
+| Category | Codes |
+| --- | --- |
+| Serialized input | INVALID_JSON, DUPLICATE_KEY |
+| Resource bounds | INPUT_TOO_DEEP, INPUT_TOO_LARGE, TOO_MANY_ITEMS, TOO_MANY_DIAGNOSTICS |
+| Unsafe input | UNSUPPORTED_INPUT, UNSAFE_OBJECT, UNSAFE_KEY, UNSAFE_NUMBER |
+| Shape | UNEXPECTED_FIELD, MISSING_FIELD, INVALID_TYPE, INVALID_VALUE, UNSUPPORTED_VERSION |
+| Definition | DUPLICATE_ID, EMPTY_REQUIRED_CRITERIA, RESTRICTED_LITERAL |
+| Integrity | DEFINITION_DIGEST_MISMATCH, REFERENCE_DIGEST_MISMATCH, EVIDENCE_DIGEST_MISMATCH |
+| Correspondence | MISMATCHED_DEFINITION, MISMATCHED_ORIGIN, UNKNOWN_REFERENCE, MISMATCHED_REFERENCE, UNKNOWN_CRITERION, MISMATCHED_OBSERVATION |
+
+Collection errors use OBSERVATION_PORT_ERROR or OBSERVATION_CANCELLED. Projection failures return PUBLIC_PROJECTION_REJECTED without diagnostic details.
+
+
+
+## Resource limits
+
+The exported `CONTRACT_LIMITS` object defines these bounds. Limits apply to the complete validated record, including nested values.
+
+| Constant | Maximum |
+| --- | ---: |
+| maxDepth | 12 |
+| maxNodes | 4,096 |
+| maxInputBytes | 262,144 |
+| maxSerializedBytes | 262,144 |
+| maxCombinedSerializedBytes | 786,432 |
+| maxStringLength | 16,384 |
+| maxIdentifierLength | 96 |
+| maxObjectKeys | 32 |
+| maxArrayLength | 128 |
+| maxCriteria | 64 |
+| maxGroups | 64 |
+| maxGroupChildren | 64 |
+| maxGroupDepth | 8 |
+| maxCompositionEdges | 127 |
+| maxReviewFeedbackBytes | 4,096 |
+| maxReviewFeedbackLength | 4,096 |
+| maxReviewCitations | 8 |
+| maxObservations | 128 |
+| maxSetItems | 128 |
+| maxEvidenceRefs | 32 |
+| maxDiagnostics | 32 |
+| maxCapturedBytes | 65,536 |
+
+Byte counts are UTF-8. Length limits on individual strings and review feedback are UTF-16 code units. The combined serialized budget applies to the complete multi-record input. A record that fits a particular field limit can still exceed a total budget.
+
+### Input restrictions
+
+The bounded snapshot rejects unknown keys, functions, accessors, unsupported prototypes, cycles, unsafe numbers and unsupported values. Numeric values must be finite; counts and offsets that require integers must be safe integers. Serialized input must be a JSON object and cannot contain duplicate keys.
+
+The decoder does not replace transport limits. Cap bytes before buffering and reject adversarial live Proxy objects. See [security and trust](/docs/assay/integrity#host-responsibilities).
+
+The [release constants](https://github.com/0xbuffdev/assay/blob/v0.0.1/src/contracts/common.ts) are the source for this table.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| invalid_definition | Schema, revision, criterion IDs, composition and definition digest |
+| invalid_evidence | Definition lineage, observation kinds, exact units, origin and evidence digest |
+| invalid_reference | Reference ID, digest, kind, unit or item type and bundle lineage |
+| inconclusive | Missing or truncated facts, unavailable references, interrupted runs or pending review |
+| evaluation_error | Comparator errors or numeric overflow; inspect private finding reasons |
+| Collection error | Adapter logs, request/report scope and cancellation signal |
+| withheld | Expected when any criterion is restricted |
+| PUBLIC_PROJECTION_REJECTED | Use the exact authorized definition and an unmodified complete evaluation result |
+
+Keep diagnostics private. Report reproducible problems with synthetic data to the [issue tracker](https://github.com/0xbuffdev/assay/issues).

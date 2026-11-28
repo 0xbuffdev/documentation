@@ -11,11 +11,7 @@ test("Assay has distinct entry, task, explanation and reference pages", async ()
   const meta = JSON.parse(await readFile(join(directory, "meta.json"), "utf8"));
   const listed = meta.pages.filter((entry) => !entry.startsWith("---"));
   assert.deepEqual([...listed].sort(), [...pages].sort());
-  assert.deepEqual(listed.slice(0, 4), ["index", "installation", "quickstart", "concepts"]);
-  for (const slug of ["criteria", "composition", "evidence", "execution-facts",
-    "protected-references", "observation-ports", "qualitative-review", "public-results",
-    "architecture", "integrity", "security", "api", "contracts", "outcomes",
-    "limits", "compatibility", "troubleshooting"]) assert.ok(pages.has(slug), slug);
+  assert.deepEqual(listed, ["index", "evaluation", "observations", "integrity", "api", "contracts"]);
 });
 
 test("Assay internal links resolve and complete examples are marked", async () => {

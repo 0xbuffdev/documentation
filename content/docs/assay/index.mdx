@@ -1,32 +1,51 @@
 ---
-title: "Assay"
-description: "Evaluate technical evidence against versioned criteria and return reproducible findings."
+title: "Installation"
+description: "Install Assay and start evaluating technical evidence."
 ---
 
-Assay evaluates technical evidence against criteria defined by your application. Use it to check engineering exercises, measurement results, structured outputs and other technical work.
+Assay evaluates technical evidence against versioned criteria. It runs offline, has no runtime dependencies, and leaves execution, authorization and decisions to your application.
 
-You supply the criteria and observations. Assay validates the records, compares the observed values and combines required checks into an outcome. It runs offline without runtime dependencies.
+## Requirements
 
-## Get started
+Node.js 24 or later and ECMAScript modules (ESM). Use an `.mjs` file or set `"type": "module"` in your package.json. TypeScript declarations are included.
 
-- [Install Assay](/docs/assay/installation) in a Node.js application.
-- [Evaluate your first result](/docs/assay/quickstart) with a complete example.
-- [Understand definitions, evidence and findings](/docs/assay/concepts) before integrating the evaluator.
+## Install
 
-## What you can do
+```sh
+npm install @0xbuff/assay@0.0.1
+```
 
-| Task | Guide |
-| --- | --- |
-| Compare text, measurements, sets and JSON | [Define criteria](/docs/assay/criteria) |
-| Require several checks or allow alternatives | [Compose required checks](/docs/assay/composition) |
-| Evaluate results from an external runner | [Evaluate execution facts](/docs/assay/execution-facts) |
-| Collect missing public observations through an adapter | [Collect observations](/docs/assay/observation-ports) |
-| Use private expected values | [Use protected references](/docs/assay/protected-references) |
-| Attach human or model feedback | [Record qualitative reviews](/docs/assay/qualitative-review) |
-| Return a limited result to a user | [Project public results](/docs/assay/public-results) |
+```sh
+pnpm add @0xbuff/assay@0.0.1
+```
 
-## Scope
+```sh
+yarn add @0xbuff/assay@0.0.1
+```
 
-Assay does not run submitted code, authenticate observations, assign grades or issue credentials. Your application owns execution, authorization and any decision based on the findings. Read the [security and trust model](/docs/assay/security) before accepting untrusted evidence or returning results to users.
+## Verify the installation
 
-These pages describe package version `0.0.1`. See the [source repository](https://github.com/0xbuffdev/assay), [release notes](https://github.com/0xbuffdev/assay/releases/tag/v0.0.1) and [Apache-2.0 license](https://github.com/0xbuffdev/assay/blob/v0.0.1/LICENSE).
+Save this as `check.mjs`.
+
+```js
+// assay-docs: runnable
+import { ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION } from "@0xbuff/assay";
+
+console.log(ASSAY_SCHEMA_VERSION, ASSAY_EVALUATOR_VERSION);
+```
+
+Run `node check.mjs`. Expected output:
+
+```text
+4 v0.0.5
+```
+
+## Next steps
+
+- [Evaluation](/docs/assay/evaluation): define criteria, supply evidence and evaluate your first result.
+- [Observations](/docs/assay/observations): integrate captured execution facts, optional adapters and reviews.
+- [Integrity and security](/docs/assay/integrity): protect expectations and control disclosure.
+
+These pages describe release `0.0.1`, schema 4, evaluator semantics `v0.0.5` and policy `composed-required-v1`. Older schemas are unsupported. Pin the package and keep your lockfile for reproducibility.
+
+[Source](https://github.com/0xbuffdev/assay) · [Changelog](https://github.com/0xbuffdev/assay/blob/v0.0.1/CHANGELOG.md) · [Apache-2.0 license](https://github.com/0xbuffdev/assay/blob/v0.0.1/LICENSE)

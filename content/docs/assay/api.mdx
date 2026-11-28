@@ -13,7 +13,7 @@ Import from `@0xbuff/assay`. The package root is the supported import path. All 
 | `inspectEvidenceCoverage(definition, evidence)` | ValidationResult of EvidenceCoverage | List missing and incomplete required criteria without evaluating them. |
 | `projectPublicResult(definition, result)` | PublicProjectionResponse | Validate a full result and create its public projection. |
 
-`EvaluationResponse` is either a complete result or an invalid-input failure. Inspect `outcome` before accessing findings. See [outcomes](/docs/assay/outcomes).
+`EvaluationResponse` is either a complete result or an invalid-input failure. Inspect `outcome` before accessing findings. See [outcomes](/docs/assay/contracts#outcomes-and-errors).
 
 ## Definition integrity
 
@@ -49,7 +49,7 @@ The first five return ValidationResult of their corresponding type. The decoder 
 
 ## Observation collection
 
-`collectObservations(definition, evidence, port, options?)` returns a Promise of ObservationCollectionResult. Supply an optional signal in `options.signal`. The host implements the port. See [collection guide](/docs/assay/observation-ports).
+`collectObservations(definition, evidence, port, options?)` returns a Promise of ObservationCollectionResult. Supply an optional signal in `options.signal`. The host implements the port. See [collection guide](/docs/assay/observations#observation-ports).
 
 ## Constants
 
@@ -57,7 +57,7 @@ The first five return ValidationResult of their corresponding type. The decoder 
 | --- | --- |
 | ASSAY_SCHEMA_VERSION | 4 |
 | ASSAY_EVALUATOR_VERSION | v0.0.5 |
-| CONTRACT_LIMITS | Frozen object containing the bounds listed in [limits](/docs/assay/limits). |
+| CONTRACT_LIMITS | Frozen object containing the bounds listed in [limits](/docs/assay/contracts#resource-limits). |
 
 ## Return wrappers
 

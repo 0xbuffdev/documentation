@@ -121,7 +121,17 @@ export default function Page({ loaderData }: Route.ComponentProps) {
 	const { path, pageTree } = useFumadocsLoader(loaderData);
 
 	return (
-		<DocsLayout {...baseOptions()} tree={pageTree}>
+		<DocsLayout
+			{...baseOptions()}
+			tree={pageTree}
+			tabs={{
+				transform: (option) => ({
+					...option,
+					icon: undefined,
+					description: undefined,
+				}),
+			}}
+		>
 			{/* SerializeFrom widens `toc.title` to the MDX macro's loose node
 			    type; the wire format is plain JSON, so re-narrow it here. */}
 			<Content

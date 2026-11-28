@@ -30,6 +30,8 @@ content/docs/
 
 The navigation validation tests run with `pnpm test`. They verify tool roots, declared pages, and document frontmatter.
 
+Use [native Fumadocs code tabs](https://www.fumadocs.dev/docs/next/markdown#tab-groups) for interchangeable examples. Give consecutive fences a `tab="..."` label and set `tab-group="package-manager"` on the first fence of each npm/pnpm/Yarn installation group so the selected manager is shared and remembered. Keep sequential commands, inputs and outputs in separate blocks.
+
 ## Interactive Throughline examples
 
 Selected Throughline guides render the published `@0xbuff/throughline@0.0.2` React player. The overview leads with a multi-system checkout recovery trace; introductory pages retain smaller teaching examples. Sources are kept in `src/lib/throughline-demos.ts`; MDX pages use `<ThroughlineDemo id="..." />`. The component is registered in `src/components/mdx.tsx`. Its compiler, player and namespaced CSS load in a separate module only when a demo is rendered. All other 0xBUFF tool documentation remains independent of Throughline.

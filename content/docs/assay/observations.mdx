@@ -228,9 +228,17 @@ The review observation must bind to the bundle's artifact digest and match the p
 }
 ```
 
-For model attribution, use:
+Choose the reviewer field for the source of the feedback:
 
-```ts
+```ts tab="Human"
+reviewer: {
+  kind: "human",
+  reviewerId: "reviewer-1",
+  reviewerVersion: "v1",
+}
+```
+
+```ts tab="Model"
 reviewer: {
   kind: "model",
   providerId: "provider",

@@ -116,8 +116,16 @@ export function remarkValidateThroughline() {
 
 Install the remark visitor and types if needed:
 
-~~~sh
+~~~sh tab="npm" tab-group="package-manager"
 npm install -D unist-util-visit @types/mdast
+~~~
+
+~~~sh tab="pnpm"
+pnpm add -D unist-util-visit @types/mdast
+~~~
+
+~~~sh tab="yarn"
+yarn add -D unist-util-visit @types/mdast
 ~~~
 
 Then register the validator in your existing Fumadocs MDX options; **preserve the other plugins**:

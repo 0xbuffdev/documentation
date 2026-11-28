@@ -2,7 +2,7 @@ import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { XMark } from "~/components/brand-icons/x-mark";
 import { YoutubeMark } from "~/components/brand-icons/youtube-mark";
 import { BrandWordmark } from "~/components/brand-wordmark";
-import { PRIMARY_NAVIGATION, ROUTES, SITE } from "./site";
+import { ROUTES, SITE } from "./site";
 
 export function baseOptions(): BaseLayoutProps {
 	return {
@@ -17,7 +17,6 @@ export function baseOptions(): BaseLayoutProps {
 			),
 		},
 		links: [
-			...PRIMARY_NAVIGATION,
 			{
 				type: "icon",
 				label: "X",

@@ -95,3 +95,7 @@ Fumadocs MDX uses `async: true`, so individual documents are compiled into page-
 ## Worker types
 
 `worker-configuration.d.ts` is generated locally by `wrangler types` and is intentionally **not tracked**. `pnpm typecheck` regenerates it before React Router types and the TypeScript compiler run; run `pnpm exec wrangler types` separately after changing bindings if editor types need refreshing. `opencode.json` is also ignored as machine-specific OpenCode configuration. The `DOCS_ENV` value is used server-side to keep staging out of search indexes.
+
+## Design system
+
+The shared tokens, fonts and base styles in `src/app.css` are synchronized from [the platform design system](https://github.com/0xbuffdev/platform/blob/16241087830ddd0c96ae7dd7ba81023cd8892365/packages/ui/src/styles/app.css). Keep the Fumadocs adapter, local source detection and documentation-specific rules when updating that snapshot. The documentation application does not import the platform's private workspace packages.
